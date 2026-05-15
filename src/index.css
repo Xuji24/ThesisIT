@@ -2,15 +2,8 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-display: "Crimson Pro", Georgia, serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --color-navy-950: #0c1018;
-  --color-navy-900: #121a28;
-  --color-navy-800: #1a2332;
-  --color-navy-700: #243044;
-  --color-gold-400: #e8c468;
-  --color-gold-500: #d4a853;
-  --color-gold-600: #b8923f;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-landing: "Inter", system-ui, sans-serif;
 }
 
 html,
@@ -20,17 +13,17 @@ body,
 }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--color-navy-950);
-  color: #e8eaed;
+  font-family: var(--font-landing);
+  background: #ffffff;
+  color: #171717;
 }
 
-.font-display {
-  font-family: var(--font-display);
+.font-landing {
+  font-family: var(--font-landing);
 }
 
 .prose-thesis {
-  @apply prose prose-invert prose-headings:font-display prose-headings:text-gold-400 prose-a:text-gold-500 max-w-none;
+  @apply prose prose-neutral prose-headings:font-semibold prose-headings:text-neutral-900 prose-a:text-neutral-900 max-w-none;
 }
 
 .tab-enter {
@@ -66,4 +59,34 @@ body {
 }
 .thinking-dots span:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  from {
+    background-position: -600px 0;
+  }
+  to {
+    background-position: 600px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f3f3f3 25%, #e8e8e8 50%, #f3f3f3 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Indeterminate progress bar */
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(500%);
+  }
+}
+
+.progress-bar {
+  animation: progress-sweep 1.4s ease-in-out infinite;
 }

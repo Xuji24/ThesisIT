@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchProviderStatus, getDefaultProvider } from '../lib/llm.js';
+import { pillActive, pillInactive } from '../lib/ui.js';
 
 const LABELS = {
   openrouter: 'OpenRouter',
@@ -21,22 +22,15 @@ export default function ProviderSelector({ provider, onChange }) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-slate-500">AI:</span>
+      <span className="text-xs text-neutral-400 hidden sm:inline">AI</span>
       {options.map((id) => (
         <button
           key={id}
           type="button"
           onClick={() => onChange(id)}
-          className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
-            provider === id
-              ? 'border-gold-500/50 bg-gold-500/15 text-gold-400'
-              : 'border-navy-600 text-slate-400 hover:text-slate-200'
+          className={`text-xs px-3 py-1.5 transition-colors ${
+            provider === id ? pillActive : pillInactive
           }`}
-          title={
-            id === 'openrouter'
-              ? 'Routed via backend (OPENROUTER_API_KEY)'
-              : 'Routed via backend (OPENAI_API_KEY)'
-          }
         >
           {LABELS[id]}
         </button>

@@ -1,4 +1,4 @@
-# 🎓 ThesisAI — MVP Build Plan for Cursor
+# 🎓 ThesisIT — MVP Build Plan for Cursor
 
 ## Project Overview
 
@@ -50,7 +50,7 @@ Manage these at the root level and pass down as props:
 ## Feature 1: Upload Screen (UploadScreen.jsx)
 
 ### UI Elements
-- App title: "ThesisAI" and tagline: "Your AI-powered thesis defense coach"
+- App title: "ThesisIT" and tagline: "Your AI-powered thesis defense coach"
 - Drag-and-drop zone OR file input (accept `.pdf` only)
 - Upload button
 - Loading spinner while extracting text with message: "Reading your manuscript..."

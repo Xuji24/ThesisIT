@@ -51,7 +51,7 @@ export function TabIcon({ id, className = 'w-4 h-4' }) {
 }
 
 export function FileIcon({ className = 'w-10 h-10' }) {
-  return <FileText className={`${iconClass} ${className} text-gold-500/80`} aria-hidden />;
+  return <FileText className={`${iconClass} ${className} text-neutral-400`} aria-hidden />;
 }
 
 export function SpinnerIcon({ className = 'w-5 h-5 animate-spin' }) {

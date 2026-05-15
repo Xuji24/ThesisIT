@@ -1,9 +1,16 @@
 import { useRef, useState } from 'react';
-import { callLLM, truncateWords } from '../lib/llm.js';
+import { callLLMStream, truncateWords } from '../lib/llm.js';
 import { MOCK_DEFENSE_PROMPT, injectPrompt } from '../lib/prompts.js';
 import { ChatInput, ChatMessages } from './shared/ChatUI.jsx';
+import { SpinnerIcon } from './icons.jsx';
 
 const DIFFICULTIES = ['Standard', 'Technical', 'Terror Panel'];
+
+const DIFFICULTY_DESCRIPTIONS = {
+  Standard: 'Rigorous but supportive',
+  Technical: 'Deep dive into methodology & stats',
+  'Terror Panel': 'Relentless follow-ups, no mercy',
+};
 
 export default function MockDefense({ thesisText, llmProvider }) {
   const [difficulty, setDifficulty] = useState('Standard');
@@ -20,13 +27,17 @@ export default function MockDefense({ thesisText, llmProvider }) {
 
   const sendToClaude = async (nextMessages) => {
     setLoading(true);
-    const reply = await callLLM({
+    let firstChunk = true;
+    await callLLMStream({
       systemPrompt,
       messages: nextMessages,
       maxTokens: 2000,
       provider: llmProvider,
+      onChunk: (text) => {
+        if (firstChunk) { setLoading(false); firstChunk = false; }
+        setMessages([...nextMessages, { role: 'assistant', content: text }]);
+      },
     });
-    setMessages([...nextMessages, { role: 'assistant', content: reply }]);
     setLoading(false);
   };
 
@@ -35,6 +46,13 @@ export default function MockDefense({ thesisText, llmProvider }) {
     const first = [{ role: 'user', content: 'Begin the oral defense.' }];
     setMessages(first);
     await sendToClaude(first);
+  };
+
+  const resetSession = () => {
+    setStarted(false);
+    setMessages([]);
+    setInput('');
+    setLoading(false);
   };
 
   const sendReply = async () => {
@@ -46,54 +64,81 @@ export default function MockDefense({ thesisText, llmProvider }) {
     await sendToClaude(next);
   };
 
-  return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="p-4 border-b border-navy-700 bg-navy-900/50 flex flex-wrap items-center gap-3">
-        <span className="text-sm text-slate-400">Difficulty:</span>
-        {DIFFICULTIES.map((d) => (
-          <button
-            key={d}
-            type="button"
-            disabled={started}
-            onClick={() => setDifficulty(d)}
-            className={`px-3 py-1 rounded-lg text-sm ${
-              difficulty === d
-                ? 'bg-gold-500/20 text-gold-400 border border-gold-500/40'
-                : 'text-slate-400 border border-navy-700 hover:border-navy-600'
-            } disabled:opacity-50`}
-          >
-            {d}
-          </button>
-        ))}
-        {!started && (
-          <button
-            type="button"
-            onClick={startSession}
-            disabled={loading}
-            className="ml-auto px-4 py-2 rounded-lg bg-gold-500 text-navy-950 font-semibold text-sm hover:bg-gold-400"
-          >
-            Start Defense Session
-          </button>
-        )}
-      </div>
-
-      {started ? (
-        <>
-          <ChatMessages messages={messages} endRef={endRef} assistantLabel="The Panel" />
-          <ChatInput
-            value={input}
-            onChange={setInput}
-            onSubmit={sendReply}
-            disabled={loading}
-            placeholder="Type your answer..."
-            thinkingLabel="Panel is thinking"
-          />
-        </>
-      ) : (
-        <p className="text-center text-slate-500 text-sm mt-16 px-4">
-          Choose a difficulty level and start your mock oral defense.
+  if (!started) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+        <h2 className="text-2xl font-semibold text-neutral-900 mb-2">Mock Defense Session</h2>
+        <p className="text-sm text-neutral-500 mb-10 max-w-sm leading-relaxed">
+          Simulate a live oral defense. The AI acts as a strict panelist — one question at a
+          time, with critical follow-ups on weak answers.
         </p>
-      )}
+
+        <div className="w-full max-w-sm mb-8">
+          <p className="text-[10px] uppercase tracking-widest text-neutral-400 font-semibold mb-3">
+            Select Difficulty
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {DIFFICULTIES.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDifficulty(d)}
+                className={`py-3 px-2 rounded-xl border text-sm font-medium transition-colors ${
+                  difficulty === d
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2.5 text-xs text-neutral-400">{DIFFICULTY_DESCRIPTIONS[difficulty]}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={startSession}
+          disabled={loading}
+          className="px-8 py-3 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <SpinnerIcon className="w-4 h-4" />
+              Starting session...
+            </span>
+          ) : (
+            'Start Defense Session'
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0 w-full">
+      <div className="px-6 lg:px-8 py-3 border-b border-neutral-100 flex items-center gap-3">
+        <span className="text-xs text-neutral-500">
+          Difficulty:{' '}
+          <span className="font-semibold text-neutral-900">{difficulty}</span>
+        </span>
+        <button
+          type="button"
+          onClick={resetSession}
+          className="ml-auto text-xs text-neutral-400 hover:text-neutral-700 underline underline-offset-2 transition-colors"
+        >
+          New Session
+        </button>
+      </div>
+      <ChatMessages messages={messages} endRef={endRef} assistantLabel="The Panel" loading={loading} />
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSubmit={sendReply}
+        disabled={loading}
+        placeholder="Type your answer..."
+        thinkingLabel="Panel is thinking"
+      />
     </div>
   );
 }

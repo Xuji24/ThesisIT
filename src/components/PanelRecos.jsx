@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { callLLM } from '../lib/llm.js';
+import { ArrowUpRight, Copy, Check } from 'lucide-react';
+import { callLLMStream } from '../lib/llm.js';
 import { PANEL_RECOS_PROMPT, injectPrompt } from '../lib/prompts.js';
+import { btnOutline, btnPrimary, card, inputBase } from '../lib/ui.js';
 
 const CHAPTERS = [
   'General / Introduction (Ch. 1)',
@@ -21,23 +23,23 @@ export default function PanelRecos({ thesisText, llmProvider }) {
     if (!comments.trim()) return;
     setLoading(true);
     setCopied(false);
+    setOutput('');
     const systemPrompt = injectPrompt(PANEL_RECOS_PROMPT, {
       PANELIST_COMMENTS: comments,
       SELECTED_CHAPTER: chapter,
       THESIS_TEXT: thesisText,
     });
-    const result = await callLLM({
+    let firstChunk = true;
+    await callLLMStream({
       systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: 'Revise the section according to the panel feedback.',
-        },
-      ],
+      messages: [{ role: 'user', content: 'Revise the section according to the panel feedback.' }],
       maxTokens: 4000,
       provider: llmProvider,
+      onChunk: (text) => {
+        if (firstChunk) { setLoading(false); firstChunk = false; }
+        setOutput(text);
+      },
     });
-    setOutput(result);
     setLoading(false);
   };
 
@@ -52,8 +54,8 @@ export default function PanelRecos({ thesisText, llmProvider }) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
-      <label className="block text-sm font-medium text-slate-300 mb-2">
+    <div className="flex-1 overflow-y-auto p-6 lg:px-8 md:py-10 max-w-3xl w-full">
+      <label className="block text-sm font-medium text-neutral-900 mb-2">
         Paste your panelist&apos;s comments or suggestions
       </label>
       <textarea
@@ -61,16 +63,16 @@ export default function PanelRecos({ thesisText, llmProvider }) {
         onChange={(e) => setComments(e.target.value)}
         rows={6}
         placeholder="e.g. Strengthen the justification for sample size in Chapter 3..."
-        className="w-full rounded-xl bg-navy-800 border border-navy-700 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500/40 resize-y"
+        className={`${inputBase} resize-y`}
       />
 
-      <label className="block text-sm font-medium text-slate-300 mt-6 mb-2">
+      <label className="block text-sm font-medium text-neutral-900 mt-6 mb-2">
         Which part of the thesis does this affect?
       </label>
       <select
         value={chapter}
         onChange={(e) => setChapter(e.target.value)}
-        className="w-full rounded-xl bg-navy-800 border border-navy-700 px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-gold-500/40"
+        className={inputBase}
       >
         {CHAPTERS.map((c) => (
           <option key={c} value={c}>
@@ -83,24 +85,50 @@ export default function PanelRecos({ thesisText, llmProvider }) {
         type="button"
         onClick={revise}
         disabled={loading || !comments.trim()}
-        className="mt-6 w-full py-3 rounded-xl bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400 disabled:opacity-40"
+        className={`${btnPrimary} mt-6 w-full group justify-center pl-6 pr-2 py-3`}
       >
-        {loading ? 'Revising section based on panel feedback...' : 'Revise This Section'}
+        {loading ? 'Revising section...' : 'Revise This Section'}
+        {!loading && (
+          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-neutral-900">
+            <ArrowUpRight className="w-4 h-4" strokeWidth={2.5} />
+          </span>
+        )}
       </button>
+
+      {loading && (
+        <div className="mt-8">
+          <div className="skeleton h-3.5 w-28 rounded mb-3" />
+          <div className="rounded-2xl border border-neutral-100 p-5 space-y-2.5">
+            {['100%', '90%', '100%', '82%', '100%', '76%', '100%', '66%'].map((w, i) => (
+              <div key={i} className="skeleton h-3.5 rounded" style={{ width: w }} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {output && (
         <div className="mt-8">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gold-400">Revised Section</h3>
+            <h3 className="text-sm font-semibold text-neutral-900">Revised Section</h3>
             <button
               type="button"
               onClick={copyOutput}
-              className="text-xs px-3 py-1.5 rounded-lg border border-navy-600 text-slate-300 hover:text-gold-400"
+              className={btnOutline}
             >
-              {copied ? 'Copied!' : 'Copy to clipboard'}
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copy
+                </>
+              )}
             </button>
           </div>
-          <div className="rounded-xl bg-navy-800 border border-navy-700 p-5 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+          <div className={`${card} p-5 text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap`}>
             {output}
           </div>
         </div>

@@ -1,4 +1,4 @@
-# ThesisAI
+# ThesisIT
 
 AI-powered thesis defense coach — upload a PDF and practice mock defense, get strengths/weaknesses analysis, chat with your manuscript, and revise sections from panel feedback.
 
