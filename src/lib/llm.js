@@ -51,18 +51,11 @@ export async function callLLMStream({
       body: JSON.stringify({ provider, systemPrompt, messages, maxTokens }),
     });
 
-    // Graceful fallback: stream endpoint not available yet → use blocking call
-    if (response.status === 404 || response.status === 502 || response.status === 503) {
+    // Graceful fallback: stream endpoint unavailable or any non-2xx → use blocking call
+    if (!response.ok) {
       const fallback = await callLLM({ systemPrompt, messages, maxTokens, provider });
       onChunk?.(fallback);
       return fallback;
-    }
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      const errText = `Error: ${data?.error || response.statusText}`;
-      onChunk?.(errText);
-      return errText;
     }
 
     const reader = response.body.getReader();

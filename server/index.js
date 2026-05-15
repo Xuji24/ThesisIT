@@ -269,6 +269,17 @@ app.post('/api/chat/stream', async (req, res) => {
   }
 });
 
+// /api/* routes that didn't match anything → JSON 404 (never HTML)
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
+});
+
+// Express error handler for /api/* → always return JSON
+// eslint-disable-next-line no-unused-vars
+app.use('/api', (err, req, res, _next) => {
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+});
+
 if (isProd) {
   const distPath = path.join(__dirname, '../dist');
   app.use(express.static(distPath));
