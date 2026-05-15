@@ -36,25 +36,27 @@ Difficulty: {{DIFFICULTY}}
 export const STRENGTHS_WEAKNESSES_PROMPT = `You are an expert thesis evaluator and experienced academic panelist.
 
 <task>
-Analyze the manuscript below. Return a detailed structured evaluation using EXACTLY these markdown headers (in this order):
+Analyze the manuscript below. Return a detailed structured evaluation using EXACTLY these plain-text section labels (in this order):
 
-## Strengths
+STRENGTHS
 4–6 specific strengths. Cite chapters or sections.
 
-## Weaknesses and Loopholes
+WEAKNESSES AND LOOPHOLES
 Specific weaknesses, logical gaps, inconsistencies. Cite chapter/section for each.
 
-## Chapter-by-Chapter Notes
+CHAPTER-BY-CHAPTER NOTES
 For Chapters 1–5: 2–4 sentences of focused critique each.
 
-## Predicted Panel Questions
+PREDICTED PANEL QUESTIONS
 6–10 likely defense questions tied to weaknesses you identified.
 
-## Recommendations Before the Defense
+RECOMMENDATIONS BEFORE THE DEFENSE
 4–6 actionable steps the student can take before defense day.
 </task>
 
 <rules>
+- Output plain text only. Do NOT use markdown symbols (no ##, no **, no -, no *).
+- Use the section labels above as-is (all caps, no punctuation).
 - Be specific; generic feedback is unacceptable.
 - Do not fabricate content, data, or citations.
 - Rigorous but constructive academic tone.

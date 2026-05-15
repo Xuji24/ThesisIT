@@ -223,6 +223,8 @@ app.post('/api/chat/stream', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  // Disable buffering on Vercel / nginx so chunks reach the client immediately
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
   try {
@@ -280,7 +282,9 @@ app.use('/api', (err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-if (isProd) {
+// In self-hosted production, serve the built frontend from /dist.
+// On Vercel, the CDN handles static files — skip this entirely.
+if (isProd && !process.env.VERCEL) {
   const distPath = path.join(__dirname, '../dist');
   app.use(express.static(distPath));
   app.get(/^\/(?!api\/).*/, (_req, res) => {
@@ -288,10 +292,16 @@ if (isProd) {
   });
 }
 
-app.listen(PORT, () => {
-  const cfg = configPayload();
-  console.log(`ThesisIT API listening on http://localhost:${PORT}`);
-  console.log(`  OpenAI:     ${cfg.openai ? 'ready' : 'missing OPENAI_API_KEY'}`);
-  console.log(`  OpenRouter: ${cfg.openrouter ? 'ready' : 'missing OPENROUTER_API_KEY'}`);
-  if (isProd) console.log('  Serving static frontend from /dist');
-});
+// Export the app so Vercel can use it as a serverless function handler.
+export default app;
+
+// Only start the HTTP server when running locally (not on Vercel).
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    const cfg = configPayload();
+    console.log(`ThesisIT API listening on http://localhost:${PORT}`);
+    console.log(`  OpenAI:     ${cfg.openai ? 'ready' : 'missing OPENAI_API_KEY'}`);
+    console.log(`  OpenRouter: ${cfg.openrouter ? 'ready' : 'missing OPENROUTER_API_KEY'}`);
+    if (isProd) console.log('  Serving static frontend from /dist');
+  });
+}

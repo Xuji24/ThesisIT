@@ -1,29 +1,6 @@
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { callLLMStream } from '../lib/llm.js';
 import { STRENGTHS_WEAKNESSES_PROMPT, injectPrompt } from '../lib/prompts.js';
-import { getReportSectionIcon } from './icons.jsx';
-
-function MarkdownH2({ children }) {
-  const text =
-    typeof children === 'string'
-      ? children
-      : Array.isArray(children)
-        ? children.join('')
-        : String(children ?? '');
-  const Icon = getReportSectionIcon(text);
-
-  return (
-    <h2 className="flex items-center gap-2 mt-8 mb-3 text-neutral-900">
-      {Icon && <Icon className="w-5 h-5 text-neutral-900 shrink-0" aria-hidden />}
-      <span>{children}</span>
-    </h2>
-  );
-}
-
-const markdownComponents = {
-  h2: MarkdownH2,
-};
 
 export default function StrengthsWeaknesses({ thesisText, llmProvider }) {
   const [report, setReport] = useState('');
@@ -111,8 +88,8 @@ export default function StrengthsWeaknesses({ thesisText, llmProvider }) {
       )}
 
       {report && !loading && (
-        <article className="prose-thesis max-w-3xl">
-          <ReactMarkdown components={markdownComponents}>{report}</ReactMarkdown>
+        <div className="max-w-3xl">
+          <p className="whitespace-pre-wrap text-sm text-neutral-800 leading-relaxed">{report}</p>
           <button
             type="button"
             onClick={analyze}
@@ -120,7 +97,7 @@ export default function StrengthsWeaknesses({ thesisText, llmProvider }) {
           >
             Re-run analysis
           </button>
-        </article>
+        </div>
       )}
     </div>
   );
