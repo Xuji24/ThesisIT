@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-display: "Crimson Pro", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --color-navy-950: #0c1018;
+  --color-navy-900: #121a28;
+  --color-navy-800: #1a2332;
+  --color-navy-700: #243044;
+  --color-gold-400: #e8c468;
+  --color-gold-500: #d4a853;
+  --color-gold-600: #b8923f;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-navy-950);
+  color: #e8eaed;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.prose-thesis {
+  @apply prose prose-invert prose-headings:font-display prose-headings:text-gold-400 prose-a:text-gold-500 max-w-none;
+}
+
+.tab-enter {
+  animation: fadeSlide 0.25s ease-out;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.thinking-dots span {
+  animation: pulse-soft 1.2s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
