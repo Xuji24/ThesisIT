@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { callLLMStream, truncateWords } from '../lib/llm.js';
-import { MOCK_DEFENSE_PROMPT, injectPrompt } from '../lib/prompts.js';
+import { MOCK_DEFENSE_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts.js';
 import { ChatInput, ChatMessages } from './shared/ChatUI.jsx';
 import { SpinnerIcon } from './icons.jsx';
 
@@ -19,25 +19,48 @@ export default function MockDefense({ thesisText, llmProvider }) {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
   const endRef = useRef(null);
+  const abortRef = useRef(null);
+  const streamTextRef = useRef('');
+  const rafRef = useRef(false);
 
-  const systemPrompt = injectPrompt(MOCK_DEFENSE_PROMPT, {
-    DIFFICULTY: difficulty,
-    THESIS_TEXT: truncateWords(thesisText, 8000),
-  });
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
+  const systemPrompt = useMemo(
+    () => injectPrompt(MOCK_DEFENSE_PROMPT, {
+      DIFFICULTY: difficulty,
+      THESIS_TEXT: sanitizeForPrompt(truncateWords(thesisText, 8000)),
+    }),
+    [difficulty, thesisText]
+  );
 
   const sendToClaude = async (nextMessages) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
+    streamTextRef.current = '';
     let firstChunk = true;
     await callLLMStream({
       systemPrompt,
       messages: nextMessages,
       maxTokens: 2000,
       provider: llmProvider,
+      signal: controller.signal,
       onChunk: (text) => {
         if (firstChunk) { setLoading(false); firstChunk = false; }
-        setMessages([...nextMessages, { role: 'assistant', content: text }]);
+        streamTextRef.current = text;
+        if (!rafRef.current) {
+          rafRef.current = true;
+          requestAnimationFrame(() => {
+            rafRef.current = false;
+            setMessages([...nextMessages, { role: 'assistant', content: streamTextRef.current }]);
+          });
+        }
       },
     });
+    setMessages([...nextMessages, { role: 'assistant', content: streamTextRef.current }]);
     setLoading(false);
   };
 
@@ -59,7 +82,7 @@ export default function MockDefense({ thesisText, llmProvider }) {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-    const next = [...messages, { role: 'user', content: text }];
+    const next = [...messages.slice(-20), { role: 'user', content: text }];
     setMessages(next);
     await sendToClaude(next);
   };
@@ -137,7 +160,6 @@ export default function MockDefense({ thesisText, llmProvider }) {
         onSubmit={sendReply}
         disabled={loading}
         placeholder="Type your answer..."
-        thinkingLabel="Panel is thinking"
       />
     </div>
   );

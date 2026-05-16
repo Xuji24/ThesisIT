@@ -5,6 +5,7 @@ import { pillActive, pillInactive } from '../lib/ui.js';
 const LABELS = {
   openrouter: 'OpenRouter',
   openai: 'OpenAI',
+  groq: 'Groq',
 };
 
 export default function ProviderSelector({ provider, onChange }) {
@@ -16,7 +17,7 @@ export default function ProviderSelector({ provider, onChange }) {
 
   if (!status) return null;
 
-  const options = ['openrouter', 'openai'].filter((id) => status[id]);
+  const options = ['openrouter', 'openai', 'groq'].filter((id) => status[id]);
 
   if (options.length <= 1) return null;
 
@@ -49,6 +50,8 @@ export function useInitialProvider() {
         setProvider(preferred);
       } else if (s.openrouter) {
         setProvider('openrouter');
+      } else if (s.groq) {
+        setProvider('groq');
       } else if (s.openai) {
         setProvider('openai');
       }

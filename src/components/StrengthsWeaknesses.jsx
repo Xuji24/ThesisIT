@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { callLLMStream } from '../lib/llm.js';
-import { STRENGTHS_WEAKNESSES_PROMPT, injectPrompt } from '../lib/prompts.js';
+import { useState, useMemo } from 'react';
+import { callLLMStream, truncateWords } from '../lib/llm.js';
+import { STRENGTHS_WEAKNESSES_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts.js';
 
 export default function StrengthsWeaknesses({ thesisText, llmProvider }) {
   const [report, setReport] = useState('');
@@ -10,7 +10,7 @@ export default function StrengthsWeaknesses({ thesisText, llmProvider }) {
     setLoading(true);
     setReport('');
     const systemPrompt = injectPrompt(STRENGTHS_WEAKNESSES_PROMPT, {
-      THESIS_TEXT: thesisText,
+      THESIS_TEXT: sanitizeForPrompt(truncateWords(thesisText, 12000)),
     });
     let firstChunk = true;
     await callLLMStream({

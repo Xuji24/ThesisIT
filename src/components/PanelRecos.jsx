@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowUpRight, Copy, Check } from 'lucide-react';
-import { callLLMStream } from '../lib/llm.js';
-import { PANEL_RECOS_PROMPT, injectPrompt } from '../lib/prompts.js';
+import { callLLMStream, truncateWords } from '../lib/llm.js';
+import { PANEL_RECOS_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts.js';
 import { btnOutline, btnPrimary, card, inputBase } from '../lib/ui.js';
 
 const CHAPTERS = [
@@ -27,7 +27,7 @@ export default function PanelRecos({ thesisText, llmProvider }) {
     const systemPrompt = injectPrompt(PANEL_RECOS_PROMPT, {
       PANELIST_COMMENTS: comments,
       SELECTED_CHAPTER: chapter,
-      THESIS_TEXT: thesisText,
+      THESIS_TEXT: sanitizeForPrompt(truncateWords(thesisText, 8000)),
     });
     let firstChunk = true;
     await callLLMStream({

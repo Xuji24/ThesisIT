@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { callLLMStream } from '../lib/llm.js';
-import { CHAT_WITH_DOC_PROMPT, injectPrompt } from '../lib/prompts.js';
+import { useRef, useState, useMemo, useEffect } from 'react';
+import { callLLMStream, truncateWords } from '../lib/llm.js';
+import { CHAT_WITH_DOC_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts.js';
 import { ChatInput, ChatMessages } from './shared/ChatUI.jsx';
 import { pillInactive } from '../lib/ui.js';
 
@@ -16,29 +16,52 @@ export default function ChatWithDoc({ thesisText, llmProvider }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
+  const abortRef = useRef(null);
+  const streamTextRef = useRef('');
+  const rafRef = useRef(false);
 
-  const systemPrompt = injectPrompt(CHAT_WITH_DOC_PROMPT, {
-    THESIS_TEXT: thesisText,
-  });
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
+  const systemPrompt = useMemo(
+    () => injectPrompt(CHAT_WITH_DOC_PROMPT, {
+      THESIS_TEXT: sanitizeForPrompt(truncateWords(thesisText, 8000)),
+    }),
+    [thesisText]
+  );
 
   const ask = async (question) => {
     const text = question.trim();
     if (!text || loading) return;
     setInput('');
-    const next = [...messages, { role: 'user', content: text }];
+    const next = [...messages.slice(-20), { role: 'user', content: text }];
     setMessages(next);
     setLoading(true);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    streamTextRef.current = '';
     let firstChunk = true;
     await callLLMStream({
       systemPrompt,
       messages: next,
       maxTokens: 2000,
       provider: llmProvider,
+      signal: controller.signal,
       onChunk: (chunk) => {
         if (firstChunk) { setLoading(false); firstChunk = false; }
-        setMessages([...next, { role: 'assistant', content: chunk }]);
+        streamTextRef.current = chunk;
+        if (!rafRef.current) {
+          rafRef.current = true;
+          requestAnimationFrame(() => {
+            rafRef.current = false;
+            setMessages([...next, { role: 'assistant', content: streamTextRef.current }]);
+          });
+        }
       },
     });
+    setMessages([...next, { role: 'assistant', content: streamTextRef.current }]);
     setLoading(false);
   };
 
@@ -66,7 +89,6 @@ export default function ChatWithDoc({ thesisText, llmProvider }) {
         onSubmit={() => ask(input)}
         disabled={loading}
         placeholder="Ask anything about your thesis..."
-        thinkingLabel="Thinking"
       />
     </div>
   );

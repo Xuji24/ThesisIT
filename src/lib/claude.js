@@ -1,1 +1,1 @@
-export { callLLM, callLLMStream, callClaude, truncateWords, getDefaultProvider, fetchProviderStatus } from './llm.js';
+export { callLLM, callLLMStream, truncateWords, getDefaultProvider, fetchProviderStatus } from './llm.js';

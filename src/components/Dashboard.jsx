@@ -1,11 +1,46 @@
+import { lazy, Suspense, Component } from 'react';
 import { FileText, Upload } from 'lucide-react';
-import MockDefense from './MockDefense.jsx';
-import StrengthsWeaknesses from './StrengthsWeaknesses.jsx';
-import ChatWithDoc from './ChatWithDoc.jsx';
-import PanelRecos from './PanelRecos.jsx';
 import ProviderSelector from './ProviderSelector.jsx';
 import { TabIcon } from './icons.jsx';
 import { btnOutline, headerBar, shell, tabActive, tabInactive } from '../lib/ui.js';
+
+const MockDefense = lazy(() => import('./MockDefense.jsx'));
+const StrengthsWeaknesses = lazy(() => import('./StrengthsWeaknesses.jsx'));
+const ChatWithDoc = lazy(() => import('./ChatWithDoc.jsx'));
+const PanelRecos = lazy(() => import('./PanelRecos.jsx'));
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+          <p className="text-sm text-neutral-500 mb-4">Something went wrong in this tab.</p>
+          <button
+            type="button"
+            onClick={() => this.setState({ error: null })}
+            className="text-sm font-medium text-neutral-900 underline underline-offset-4"
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const TabFallback = () => (
+  <div className="flex-1 flex items-center justify-center py-16">
+    <div className="skeleton h-4 w-32 rounded" />
+  </div>
+);
 
 const TABS = [
   { id: 'mock', label: 'Mock Defense' },
@@ -65,18 +100,22 @@ export default function Dashboard({
       </header>
 
       <main className="flex-1 flex flex-col min-h-0 tab-enter max-w-6xl mx-auto w-full">
-        {activeTab === 'mock' && (
-          <MockDefense thesisText={thesisText} llmProvider={llmProvider} />
-        )}
-        {activeTab === 'strengths' && (
-          <StrengthsWeaknesses thesisText={thesisText} llmProvider={llmProvider} />
-        )}
-        {activeTab === 'chat' && (
-          <ChatWithDoc thesisText={thesisText} llmProvider={llmProvider} />
-        )}
-        {activeTab === 'panel' && (
-          <PanelRecos thesisText={thesisText} llmProvider={llmProvider} />
-        )}
+        <ErrorBoundary key={activeTab}>
+          <Suspense fallback={<TabFallback />}>
+            {activeTab === 'mock' && (
+              <MockDefense thesisText={thesisText} llmProvider={llmProvider} />
+            )}
+            {activeTab === 'strengths' && (
+              <StrengthsWeaknesses thesisText={thesisText} llmProvider={llmProvider} />
+            )}
+            {activeTab === 'chat' && (
+              <ChatWithDoc thesisText={thesisText} llmProvider={llmProvider} />
+            )}
+            {activeTab === 'panel' && (
+              <PanelRecos thesisText={thesisText} llmProvider={llmProvider} />
+            )}
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   );
