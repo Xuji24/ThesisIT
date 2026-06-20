@@ -8,7 +8,7 @@ export function injectPrompt(template, vars) {
   for (const [key, value] of Object.entries(vars)) {
     result = result.split(`{{${key}}}`).join(value ?? '');
   }
-  if (import.meta.env.DEV) {
+  if (process.env.NODE_ENV === 'development') {
     const remaining = result.match(/\{\{[A-Z_]+\}\}/g);
     if (remaining) console.warn('injectPrompt: unresolved placeholders:', remaining);
   }

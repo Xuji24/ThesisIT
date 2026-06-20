@@ -1,0 +1,5 @@
+{
+    "tasksync.agentOrchestration": false,
+    "tasksync.responseTimeout": "0",
+    "tasksync.sessionWarningHours": 0
+}
