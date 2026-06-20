@@ -163,7 +163,7 @@ const VoiceOrb = forwardRef<VoiceOrbHandle, VoiceOrbProps>(
     const aiSpkRef    = useRef(isAISpeaking);
     const loadingRef  = useRef(isLoading);
     const analyserRef = useRef(analyserNode ?? null);
-    const fftBufRef   = useRef<Uint8Array | null>(null);
+    const fftBufRef   = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
     userSpkRef.current  = isUserSpeaking;
     aiSpkRef.current    = isAISpeaking;
