@@ -7,9 +7,9 @@ export const maxDuration = 30;
 /** Strip Markdown so TTS engines don't read out "asterisk asterisk bold asterisk asterisk". */
 function stripMarkdown(text: string): string {
   return text
-    .replace(/\*\*(.*?)\*\*/gs, '$1')          // **bold**
-    .replace(/\*(.*?)\*/gs, '$1')              // *italic*
-    .replace(/_{1,2}(.*?)_{1,2}/gs, '$1')     // __underline__
+    .replace(/\*\*([\s\S]*?)\*\*/g, '$1')     // **bold**
+    .replace(/\*([\s\S]*?)\*/g, '$1')         // *italic*
+    .replace(/_{1,2}([\s\S]*?)_{1,2}/g, '$1') // __underline__
     .replace(/^#{1,6}\s+/gm, '')              // # headings
     .replace(/^[-*+]\s+/gm, '')              // bullet list items
     .replace(/^\d+\.\s+/gm, '')              // numbered list items
