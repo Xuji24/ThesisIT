@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 
 const MAX_PAGES = 80;
 const MAX_CHARS = 240_000;
-const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // Stay below hosted request body limits.
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
     if (file.size > MAX_FILE_BYTES) {
       return NextResponse.json(
-        { error: `PDF too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 50 MB.` },
+        { error: `PDF too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 4 MB.` },
         { status: 413 }
       );
     }

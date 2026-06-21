@@ -4,6 +4,10 @@ import { useCallback, useRef, useState, type DragEvent } from 'react';
 import { FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { extractPdfText, type PdfExtractionProgress } from '@/lib/pdfClient';
+
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / 1024 / 1024;
 
 interface UploadScreenProps {
   onUploadComplete: (text: string, name: string) => void;
@@ -14,6 +18,7 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState<PdfExtractionProgress | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pickFile = (f: File | undefined) => {
@@ -22,11 +27,12 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
       setError('Please upload a PDF file only.');
       return;
     }
-    if (f.size > 50 * 1024 * 1024) {
-      setError('PDF is too large (over 50 MB). Please upload a smaller file.');
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setError(`PDF is too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Please upload a PDF under ${MAX_UPLOAD_MB} MB.`);
       return;
     }
     setError('');
+    setProgress(null);
     setFile(f);
   };
 
@@ -45,19 +51,15 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
     }
     setLoading(true);
     setError('');
+    setProgress(null);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/pdf/extract', { method: 'POST', body: fd });
-      const data = await res.json() as { text?: string; error?: string };
-      if (!res.ok || !data.text) {
-        throw new Error(data.error ?? 'Failed to read PDF.');
-      }
-      onUploadComplete(data.text, file.name);
+      const text = await extractPdfText(file, setProgress);
+      onUploadComplete(text, file.name);
     } catch (err) {
       setError((err as { message?: string }).message || 'Failed to read PDF.');
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -112,7 +114,11 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
                   <div className="absolute inset-y-0 w-1/3 bg-emerald-500 rounded-full progress-bar shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                 </div>
                 <div className="space-y-1 text-center">
-                  <p className="text-sm text-slate-700 font-medium">Reading your manuscript...</p>
+                  <p className="text-sm text-slate-700 font-medium">
+                    {progress
+                      ? `Reading page ${progress.currentPage} of ${progress.totalPages}...`
+                      : 'Reading your manuscript...'}
+                  </p>
                   <p className="text-xs text-slate-400 truncate max-w-[200px]">{file?.name}</p>
                 </div>
               </div>
@@ -134,7 +140,7 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
                   {' '}or{' '}
                   <span className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline">click to browse</span>
                 </p>
-                <p className="text-xs">PDF files only (max 50MB)</p>
+                <p className="text-xs">PDF files only (max {MAX_UPLOAD_MB}MB)</p>
               </div>
             )}
           </div>
