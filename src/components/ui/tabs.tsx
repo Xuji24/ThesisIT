@@ -9,7 +9,7 @@ const Tabs = TabsPrimitive.Root;
 function TabsList({ className, ...props }: ComponentPropsWithoutRef<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn('flex overflow-x-auto border-t border-neutral-100', className)}
+      className={cn('flex overflow-x-auto', className)}
       {...props}
     />
   );
@@ -19,9 +19,9 @@ function TabsTrigger({ className, ...props }: ComponentPropsWithoutRef<typeof Ta
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        'shrink-0 px-4 py-3 text-sm transition-all border-b-2 flex items-center gap-2 whitespace-nowrap focus-visible:outline-none',
-        'border-transparent text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50',
-        'data-[state=active]:border-neutral-900 data-[state=active]:text-neutral-900 data-[state=active]:font-semibold',
+        'shrink-0 px-4 py-2 text-sm transition-colors flex items-center gap-2 whitespace-nowrap focus-visible:outline-none',
+        'text-ink-muted hover:text-ink-primary',
+        'data-[state=active]:text-ink-primary data-[state=active]:font-semibold',
         className
       )}
       {...props}

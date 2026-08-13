@@ -78,7 +78,7 @@ function tryWrite(key: string, serialized: string): void {
  * Data is scoped to the current browser tab and is erased automatically
  * when the tab is closed — no manual cleanup required.
  */
-export function useLocalStorage<T>(
+export function useSessionStorage<T>(
   key: string,
   initialValue: T,
 ): [T, (value: T | ((prev: T) => T)) => void] {

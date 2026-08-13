@@ -6,7 +6,7 @@ import { chunkText, retrieveTopChunks } from '../lib/chunkRetrieval';
 import { CHAT_WITH_DOC_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts';
 import { ChatInput, ChatMessages } from './shared/ChatUI';
 import { Button } from '@/components/ui/button';
-import { useLocalStorage, STORAGE_KEYS } from '@/hooks/useLocalStorage';
+import { useSessionStorage, STORAGE_KEYS } from '@/hooks/useSessionStorage';
 
 const SUGGESTIONS = [
   'Summarize Chapter 3',
@@ -20,7 +20,7 @@ interface ChatWithDocProps {
 }
 
 export default function ChatWithDoc({ thesisText }: ChatWithDocProps) {
-  const [messages, setMessages] = useLocalStorage<{ role: string; content: string }[]>(
+  const [messages, setMessages] = useSessionStorage<{ role: string; content: string }[]>(
     STORAGE_KEYS.CHAT_MESSAGES, []
   );
   const [input, setInput] = useState('');
@@ -91,7 +91,7 @@ export default function ChatWithDoc({ thesisText }: ChatWithDocProps) {
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full">
       {messages.length === 0 && (
-        <div className="px-6 lg:px-8 py-4 flex flex-wrap gap-2 border-b border-neutral-100">
+        <div className="px-6 lg:px-8 py-4 flex flex-wrap gap-2 border-b border-line-hairline">
           {SUGGESTIONS.map((s) => (
             <Button
               key={s}

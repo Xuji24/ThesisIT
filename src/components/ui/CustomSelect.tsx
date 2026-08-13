@@ -34,21 +34,21 @@ export function CustomSelect({
     <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectPrimitive.Trigger
         className={cn(
-          'flex w-full items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900',
-          'placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400',
+          'flex w-full items-center justify-between rounded-md border border-line-hairline bg-surface-card px-4 py-2.5 text-sm text-ink-primary',
+          'placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent/15 focus:border-accent',
           'disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon asChild>
-          <ChevronDown className="h-4 w-4 text-neutral-500 shrink-0" />
+          <ChevronDown className="h-4 w-4 text-ink-muted shrink-0" />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
 
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
-          className="z-50 min-w-[8rem] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-md animate-in fade-in-0 zoom-in-95"
+          className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-line-hairline bg-surface-card shadow-overlay animate-in fade-in-0 zoom-in-95"
           position="popper"
           sideOffset={4}
         >
@@ -58,8 +58,8 @@ export function CustomSelect({
                 key={opt.value}
                 value={opt.value}
                 className={cn(
-                  'relative flex w-full cursor-default select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-neutral-900',
-                  'outline-none focus:bg-neutral-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
+                  'relative flex w-full cursor-default select-none items-center rounded-[calc(var(--radius-md)-2px)] py-2 pl-8 pr-3 text-sm text-ink-primary',
+                  'outline-none focus:bg-surface-sunken data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
                 )}
               >
                 <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">

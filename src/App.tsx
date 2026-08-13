@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import UploadScreen from './components/UploadScreen';
 import Dashboard from './components/Dashboard';
-import { useLocalStorage, clearSessionData, STORAGE_KEYS } from './hooks/useLocalStorage';
+import { useSessionStorage, clearSessionData, STORAGE_KEYS } from './hooks/useSessionStorage';
 
 export default function App() {
-  const [thesisText, setThesisText] = useLocalStorage(STORAGE_KEYS.THESIS_TEXT, '');
-  const [fileName, setFileName] = useLocalStorage(STORAGE_KEYS.FILE_NAME, '');
-  const [activeTab, setActiveTab] = useLocalStorage(STORAGE_KEYS.ACTIVE_TAB, 'strengths');
+  const [thesisText, setThesisText] = useSessionStorage(STORAGE_KEYS.THESIS_TEXT, '');
+  const [fileName, setFileName] = useSessionStorage(STORAGE_KEYS.FILE_NAME, '');
+  const [activeTab, setActiveTab] = useSessionStorage(STORAGE_KEYS.ACTIVE_TAB, 'strengths');
 
   const handleUploadComplete = (text: string, name: string) => {
     // Clear previous session data before loading new thesis

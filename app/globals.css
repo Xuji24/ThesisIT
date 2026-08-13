@@ -1,9 +1,117 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ────────────────────────────────────────────────────────────────────────
+ * Design tokens — refined editorial
+ *
+ * Decisions recorded taste-skill style (Trigger → Decision → Reason →
+ * Trade-off) so a future change knows what it's overturning, not just what
+ * number to type.
+ *
+ * SURFACES
+ *   Trigger:  glassmorphism + slate/neutral split read as unfinished, not
+ *             as a considered aesthetic.
+ *   Decision: flat layered surfaces (page ≠ card ≠ sunken), one hairline
+ *             border weight, no blur, shadow reserved for overlays only.
+ *   Reason:   a dense analytics/admin app is read, not admired — clarity
+ *             under real content beats a decorative surface.
+ *   Trade-off: loses the "premium SaaS" glass sheen; gains legibility at
+ *             data density and one visual language end to end.
+ *
+ * ACCENT
+ *   Trigger:  emerald was used as page chrome (backgrounds, borders,
+ *             scrollbars) as well as the identity color, so it stopped
+ *             signaling anything specific.
+ *   Decision: emerald is accent-only — links, the active tab, the primary
+ *             action, the focus ring. Never a background or border by
+ *             default.
+ *   Trade-off: less "green app" branding at a glance; accent now reliably
+ *             means "this is actionable" instead of "this is ThesisIT".
+ *
+ * CHART PALETTE
+ *   Values match dataviz/references/palette.md exactly (not re-derived) so
+ *   the app chrome and every chart share one validated system. Re-run
+ *   scripts/validate_palette.js before changing any categorical hex below.
+ * ──────────────────────────────────────────────────────────────────────── */
+
 @theme {
   --font-sans: var(--font-sans), "Inter", system-ui, sans-serif;
   --font-heading: var(--font-heading), "Outfit", system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-surface-page: #f9f9f7;
+  --color-surface-card: #fcfcfb;
+  --color-surface-sunken: #f2f1ee;
+
+  /* Ink */
+  --color-ink-primary: #0b0b0b;
+  --color-ink-secondary: #52514e;
+  --color-ink-muted: #898781;
+
+  /* Lines */
+  --color-line-hairline: #e1e0d9;
+  --color-line-strong: #c3c2b7;
+
+  /* Accent — emerald, accent-only (see note above) */
+  --color-accent: #059669;
+  --color-accent-hover: #047857;
+  --color-accent-soft: #ecfdf5;
+
+  /* Status — fixed, never reused for chart series identity */
+  --color-status-good: #0ca30c;
+  --color-status-warning: #fab219;
+  --color-status-serious: #ec835a;
+  --color-status-critical: #d03b3b;
+
+  /* Radii — replaces the mixed lg/xl/2xl/3xl/full usage across components */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* One shadow token — overlays only (dropdown, dialog, toast). Cards and
+     page chrome use a hairline border instead of a shadow. */
+  --shadow-overlay: 0 8px 24px -4px rgb(11 11 11 / 0.12), 0 2px 6px -2px rgb(11 11 11 / 0.08);
+
+  /* ── shadcn semantic bridge ──────────────────────────────────────────────
+   * Trigger:  copied-in shadcn components (button, input, sidebar, sheet,
+   *           tooltip, separator, skeleton — components.json, style
+   *           "radix-nova") are written against shadcn's own semantic names
+   *           (bg-primary, bg-sidebar, text-foreground, ...), not this
+   *           file's tokens above.
+   * Decision: alias every shadcn name a copied-in component actually uses to
+   *           the existing validated tokens, once, here — never re-derive
+   *           colors per component or hand-edit a copied component's classes.
+   * Trade-off: two names for some colors (--color-accent and --color-primary
+   *           are the same emerald). Accepted: it keeps `npx shadcn add`
+   *           usable for future components without per-file token surgery.
+   * Adding a new shadcn component: run `npx shadcn add <name> --dry-run`
+   *           first, diff it, and extend this block for any new bg-, text-,
+   *           or border- prefixed semantic token this file doesn't already
+   *           define. */
+  --color-background: var(--color-surface-page);
+  --color-foreground: var(--color-ink-primary);
+  --color-card: var(--color-surface-card);
+  --color-card-foreground: var(--color-ink-primary);
+  --color-popover: var(--color-surface-card);
+  --color-popover-foreground: var(--color-ink-primary);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-surface-sunken);
+  --color-secondary-foreground: var(--color-ink-secondary);
+  --color-muted: var(--color-surface-sunken);
+  --color-muted-foreground: var(--color-ink-muted);
+  --color-destructive: var(--color-status-critical);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--color-line-hairline);
+  --color-input: var(--color-line-hairline);
+  --color-ring: var(--color-accent);
+  --color-sidebar: var(--color-surface-card);
+  --color-sidebar-foreground: var(--color-ink-primary);
+  --color-sidebar-accent: var(--color-surface-sunken);
+  --color-sidebar-accent-foreground: var(--color-ink-primary);
+  --color-sidebar-border: var(--color-line-hairline);
+  --color-sidebar-ring: var(--color-accent);
 }
 
 html,
@@ -13,6 +121,8 @@ body {
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--color-surface-page);
+  color: var(--color-ink-primary);
 }
 
 .font-heading {
@@ -20,16 +130,7 @@ body {
 }
 
 .prose-thesis {
-  @apply prose prose-slate prose-headings:font-heading prose-headings:font-semibold prose-headings:text-slate-900 prose-a:text-emerald-600 hover:prose-a:text-emerald-500 max-w-none;
-}
-
-/* Glassmorphism utilities */
-.glass {
-  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm;
-}
-
-.glass-card {
-  @apply bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl shadow-slate-200/50 rounded-2xl;
+  @apply prose prose-neutral prose-headings:font-heading prose-headings:font-semibold prose-headings:text-ink-primary prose-a:text-accent hover:prose-a:text-accent-hover max-w-none;
 }
 
 .tab-enter {
@@ -86,7 +187,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(90deg, #f2f1ee 25%, #e1e0d9 50%, #f2f1ee 75%);
   background-size: 800px 100%;
   animation: shimmer 2s infinite linear;
 }
@@ -106,7 +207,8 @@ body {
   animation: progress-sweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Lyric word fade-in — used by VoiceOrb subtitle */
+/* Lyric word fade-in — used by VoiceOrb subtitle (guardrail: motion timing
+   is part of the frozen voice pipeline UX, do not retune) */
 @keyframes lyric-word {
   from {
     opacity: 0;
@@ -124,10 +226,10 @@ body {
   animation: lyric-word 0.35s ease forwards;
 }
 
-/* Brand scrollbar — emerald, matches ThesisIT glass UI */
+/* Brand scrollbar — accent-tinted, matches the editorial token layer */
 .scrollbar-brand {
   scrollbar-width: thin;
-  scrollbar-color: rgb(16 185 129 / 0.5) rgb(236 253 245 / 0.7);
+  scrollbar-color: rgb(5 150 105 / 0.5) rgb(236 253 245 / 0.7);
   scrollbar-gutter: stable;
 }
 
@@ -143,13 +245,13 @@ body {
 }
 
 .scrollbar-brand::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgb(52 211 153 / 0.7), rgb(16 185 129 / 0.85));
+  background: linear-gradient(180deg, rgb(5 150 105 / 0.7), rgb(4 120 87 / 0.85));
   border-radius: 9999px;
   border: 1.5px solid rgb(236 253 245 / 0.8);
 }
 
 .scrollbar-brand::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgb(16 185 129 / 0.85), rgb(5 150 105 / 0.95));
+  background: linear-gradient(180deg, rgb(4 120 87 / 0.85), rgb(6 95 70 / 0.95));
 }
 
 .scrollbar-brand::-webkit-scrollbar-corner {

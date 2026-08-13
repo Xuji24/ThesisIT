@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { logEvent } from '../../../lib/server/logEvent';
 
 export const maxDuration = 30;
 
@@ -119,12 +120,19 @@ export async function POST(request: NextRequest) {
 
   // Provider waterfall: ElevenLabs → Google Cloud TTS → browser fallback
   const elevenlabs = await tryElevenLabs(clean);
-  if (elevenlabs) return elevenlabs;
+  if (elevenlabs) {
+    await logEvent('tts_request', { provider: 'elevenlabs', chars: clean.length }, request);
+    return elevenlabs;
+  }
 
   const google = await tryGoogleTTS(clean);
-  if (google) return google;
+  if (google) {
+    await logEvent('tts_request', { provider: 'google', chars: clean.length }, request);
+    return google;
+  }
 
   // No API keys configured — tell the client to use browser SpeechSynthesis
   console.info('[TTS] No API keys found — returning browser fallback.');
+  await logEvent('tts_request', { provider: 'browser', chars: clean.length }, request);
   return Response.json({ fallback: true, provider: 'browser', cleanText: clean });
 }

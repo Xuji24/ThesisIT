@@ -10,11 +10,11 @@ function Alert({ className, variant = 'default', ...props }: AlertProps) {
     <div
       role="alert"
       className={cn(
-        'relative w-full rounded-xl border p-4 text-sm',
-        variant === 'default' && 'border-neutral-200 bg-white text-neutral-800',
-        variant === 'destructive' && 'border-red-200 bg-red-50 text-red-700',
-        variant === 'warning' && 'border-amber-200 bg-amber-50 text-amber-800',
-        variant === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        'relative w-full rounded-md border p-4 text-sm',
+        variant === 'default' && 'border-line-hairline bg-surface-card text-ink-secondary',
+        variant === 'destructive' && 'border-status-critical/25 bg-status-critical/10 text-status-critical',
+        variant === 'warning' && 'border-status-warning/35 bg-status-warning/10 text-[#8a5a00]',
+        variant === 'success' && 'border-status-good/25 bg-status-good/10 text-status-good',
         className
       )}
       {...props}

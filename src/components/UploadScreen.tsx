@@ -20,6 +20,7 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<PdfExtractionProgress | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastProgressRef = useRef<PdfExtractionProgress | null>(null);
 
   const pickFile = (f: File | undefined) => {
     if (!f) return;
@@ -53,8 +54,21 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
     setError('');
     setProgress(null);
     try {
-      const text = await extractPdfText(file, setProgress);
+      const text = await extractPdfText(file, (p) => {
+        lastProgressRef.current = p;
+        setProgress(p);
+      });
       onUploadComplete(text, file.name);
+      // Best-effort usage telemetry -- signed-in users only (see logEvent.ts),
+      // never blocks or affects the upload flow either way.
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'pdf_upload',
+          meta: { pages: lastProgressRef.current?.totalPages ?? null, chars: text.length },
+        }),
+      }).catch(() => {});
     } catch (err) {
       setError((err as { message?: string }).message || 'Failed to read PDF.');
     } finally {
@@ -64,108 +78,97 @@ export default function UploadScreen({ onUploadComplete }: UploadScreenProps) {
   };
 
   return (
-    <div className="min-h-full bg-slate-50 text-slate-900 font-sans antialiased flex flex-col relative overflow-hidden">
-      {/* Decorative background blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/50 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-teal-200/50 blur-3xl pointer-events-none" />
-
-      {/* Minimal header */}
-      <header className="glass px-6 py-4 z-10 sticky top-0">
-        <span className="text-base font-heading font-bold tracking-tight text-emerald-900">ThesisIT</span>
-      </header>
-
-      {/* Centered main */}
-      <main className="flex-1 flex items-center justify-center px-6 py-16 z-10">
-        <div className="w-full max-w-xl tab-enter glass-card p-8 md:p-10">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-heading font-bold tracking-tight text-slate-900">ThesisIT</h1>
-            <p className="mt-3 text-base text-slate-500">
-              Your AI-powered thesis defense coach
-            </p>
-          </div>
-
-          <input
-            ref={inputRef}
-            placeholder={'Select your thesis PDF...'}
-            type="file"
-            accept=".pdf,application/pdf"
-            className="hidden"
-            onChange={(e) => pickFile(e.target.files?.[0])}
-          />
-
-          {/* Drop zone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={!file && !loading ? openFilePicker : undefined}
-            className={`rounded-2xl border-2 border-dashed px-8 py-14 text-center transition-all duration-300 ${
-              !file && !loading ? 'cursor-pointer hover:shadow-lg hover:shadow-emerald-100' : ''
-            } ${
-              dragOver
-                ? 'border-emerald-400 bg-emerald-50/50 scale-[1.02]'
-                : 'border-slate-300 hover:border-emerald-400 bg-white/50'
-            }`}
-          >
-            {loading ? (
-              <div className="flex flex-col items-center gap-4">
-                <FileUp className="w-8 h-8 text-emerald-400 animate-pulse" strokeWidth={1.5} />
-                <div className="w-44 h-1.5 bg-slate-200 rounded-full overflow-hidden relative shadow-inner">
-                  <div className="absolute inset-y-0 w-1/3 bg-emerald-500 rounded-full progress-bar shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                </div>
-                <div className="space-y-1 text-center">
-                  <p className="text-sm text-slate-700 font-medium">
-                    {progress
-                      ? `Reading page ${progress.currentPage} of ${progress.totalPages}...`
-                      : 'Reading your manuscript...'}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate max-w-[200px]">{file?.name}</p>
-                </div>
-              </div>
-            ) : file ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-1">
-                  <FileUp className="w-8 h-8 text-emerald-600" strokeWidth={1.5} />
-                </div>
-                <p className="text-sm font-medium text-slate-900 truncate max-w-[220px]">{file.name}</p>
-                <p className="text-xs text-slate-500 font-medium bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">Ready to process</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 text-slate-400">
-                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-1 group-hover:bg-emerald-50 transition-colors">
-                  <FileUp className="w-8 h-8 text-slate-400 group-hover:text-emerald-500 transition-colors" strokeWidth={1.5} />
-                </div>
-                <p className="text-sm">
-                  <span className="font-medium text-slate-700">Drop your PDF here</span>
-                  {' '}or{' '}
-                  <span className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline">click to browse</span>
-                </p>
-                <p className="text-xs">PDF files only (max {MAX_UPLOAD_MB}MB)</p>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <Alert variant="destructive" className="mt-5 bg-red-50 border-red-200 text-red-800">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Button
-            type="button"
-            onClick={handleUpload}
-            disabled={loading}
-            variant="default"
-            className="mt-6 w-full py-6 rounded-xl text-base font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {loading
-              ? 'Reading manuscript...'
-              : file
-              ? 'Continue with thesis'
-              : 'Upload PDF'}
-          </Button>
+    <main className="flex-1 flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-xl tab-enter rounded-lg border border-line-hairline bg-surface-card p-8 md:p-10">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-heading font-bold tracking-tight text-ink-primary">ThesisIT</h1>
+          <p className="mt-3 text-base text-ink-muted">
+            Your AI-powered thesis defense coach
+          </p>
         </div>
-      </main>
-    </div>
+
+        <input
+          ref={inputRef}
+          placeholder={'Select your thesis PDF...'}
+          type="file"
+          accept=".pdf,application/pdf"
+          className="hidden"
+          onChange={(e) => pickFile(e.target.files?.[0])}
+        />
+
+        {/* Drop zone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={!file && !loading ? openFilePicker : undefined}
+          className={`rounded-md border-2 border-dashed px-8 py-14 text-center transition-colors duration-200 ${
+            !file && !loading ? 'cursor-pointer' : ''
+          } ${
+            dragOver
+              ? 'border-accent bg-accent-soft'
+              : 'border-line-strong hover:border-accent bg-surface-sunken'
+          }`}
+        >
+          {loading ? (
+            <div className="flex flex-col items-center gap-4">
+              <FileUp className="w-8 h-8 text-accent animate-pulse" strokeWidth={1.5} />
+              <div className="w-44 h-1.5 bg-line-hairline rounded-full overflow-hidden relative">
+                <div className="absolute inset-y-0 w-1/3 bg-accent rounded-full progress-bar" />
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-sm text-ink-secondary font-medium">
+                  {progress
+                    ? `Reading page ${progress.currentPage} of ${progress.totalPages}...`
+                    : 'Reading your manuscript...'}
+                </p>
+                <p className="text-xs text-ink-muted truncate max-w-[200px]">{file?.name}</p>
+              </div>
+            </div>
+          ) : file ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-accent-soft flex items-center justify-center mb-1">
+                <FileUp className="w-8 h-8 text-accent" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm font-medium text-ink-primary truncate max-w-[220px]">{file.name}</p>
+              <p className="text-xs text-ink-muted font-medium bg-surface-card px-3 py-1 rounded-full border border-line-hairline">Ready to process</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 text-ink-muted">
+              <div className="w-16 h-16 rounded-full bg-surface-page flex items-center justify-center mb-1">
+                <FileUp className="w-8 h-8 text-ink-muted" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm">
+                <span className="font-medium text-ink-secondary">Drop your PDF here</span>
+                {' '}or{' '}
+                <span className="font-medium text-accent hover:text-accent-hover hover:underline">click to browse</span>
+              </p>
+              <p className="text-xs">PDF files only (max {MAX_UPLOAD_MB}MB)</p>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <Alert variant="destructive" className="mt-5">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Button
+          type="button"
+          onClick={handleUpload}
+          disabled={loading}
+          variant="default"
+          size="lg"
+          className="mt-6 w-full"
+        >
+          {loading
+            ? 'Reading manuscript...'
+            : file
+            ? 'Continue with thesis'
+            : 'Upload PDF'}
+        </Button>
+      </div>
+    </main>
   );
 }

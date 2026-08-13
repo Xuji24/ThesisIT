@@ -1,3 +1,5 @@
+import { gradeColorClass } from '@/lib/chartPalette';
+
 export const DIFFICULTIES = ['Standard', 'Technical', 'Terror Panel'] as const;
 
 export const DIFFICULTY_DESCRIPTIONS: Record<(typeof DIFFICULTIES)[number], string> = {
@@ -23,11 +25,11 @@ export const CRITERIA_RUBRIC = [
 ] as const;
 
 export const GRADE_SCALE = [
-  ['A', '90–100', 'text-emerald-700'],
-  ['B', '80–89', 'text-blue-600'],
-  ['C', '70–79', 'text-amber-600'],
-  ['D', '60–69', 'text-orange-600'],
-  ['F', '< 60', 'text-red-600'],
+  ['A', '90–100', gradeColorClass('A')],
+  ['B', '80–89', gradeColorClass('B')],
+  ['C', '70–79', gradeColorClass('C')],
+  ['D', '60–69', gradeColorClass('D')],
+  ['F', '< 60', gradeColorClass('F')],
 ] as const;
 
 export const CHAPTER_QUERIES = [
@@ -40,3 +42,6 @@ export const CHAPTER_QUERIES = [
 
 export const VOICE_ORB_SIZE_MAX = 380;
 export const VOICE_ORB_SIZE_MIN = 200;
+
+/** Answers at or above this word count skip the vague-answer gate and go to the LLM. */
+export const MIN_DEFENSE_ANSWER_WORDS = 10;

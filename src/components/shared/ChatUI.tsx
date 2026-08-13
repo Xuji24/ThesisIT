@@ -9,12 +9,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 function SkeletonBubble({ label }: { label?: string }) {
   return (
     <div className="flex items-end gap-2 mb-5">
-      <div className="w-6 h-6 rounded-full bg-neutral-900 shrink-0 flex items-center justify-center">
+      <div className="w-6 h-6 rounded-full bg-ink-primary shrink-0 flex items-center justify-center">
         <span className="text-white text-[9px] font-bold tracking-tight">AI</span>
       </div>
-      <div className="rounded-2xl rounded-bl-sm bg-white border border-neutral-200 shadow-sm px-4 py-3 w-72 max-w-[80%]">
+      <div className="rounded-2xl rounded-bl-sm bg-surface-card border border-line-hairline px-4 py-3 w-72 max-w-[80%]">
         {label && (
-          <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2.5 font-semibold">
+          <p className="text-[10px] uppercase tracking-widest text-ink-muted mb-2.5 font-semibold">
             {label}
           </p>
         )}
@@ -37,19 +37,19 @@ export function ChatBubble({ role, content, label }: ChatBubbleProps) {
   return (
     <div className={`flex items-end gap-2 mb-5 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="w-6 h-6 rounded-full bg-neutral-900 shrink-0 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full bg-ink-primary shrink-0 flex items-center justify-center">
           <span className="text-white text-[9px] font-bold tracking-tight">AI</span>
         </div>
       )}
       <div
         className={`max-w-[80%] md:max-w-[68%] px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? 'rounded-2xl rounded-br-sm bg-neutral-900 text-white'
-            : 'rounded-2xl rounded-bl-sm bg-white border border-neutral-200 text-neutral-800 shadow-sm'
+            ? 'rounded-2xl rounded-br-sm bg-ink-primary text-white'
+            : 'rounded-2xl rounded-bl-sm bg-surface-card border border-line-hairline text-ink-secondary'
         }`}
       >
         {!isUser && label && (
-          <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1.5 font-semibold">
+          <p className="text-[10px] uppercase tracking-widest text-ink-muted mb-1.5 font-semibold">
             {label}
           </p>
         )}
@@ -74,7 +74,7 @@ export function ChatInput({ value, onChange, onSubmit, disabled, placeholder }: 
   };
 
   return (
-    <div className="border-t border-neutral-100 bg-white px-4 py-4 md:px-6">
+    <div className="border-t border-line-hairline bg-surface-card px-4 py-4 md:px-6">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           type="text"
@@ -89,7 +89,7 @@ export function ChatInput({ value, onChange, onSubmit, disabled, placeholder }: 
           variant="default"
           size="icon"
           disabled={disabled || !value.trim()}
-          className="shrink-0 rounded-xl h-[42px] w-[42px]"
+          className="shrink-0 rounded-full h-[42px] w-[42px]"
         >
           <Send className="w-4 h-4" strokeWidth={2} />
           <span className="sr-only">Send</span>
@@ -116,7 +116,7 @@ export function ChatMessages({ messages, endRef, assistantLabel = 'Assistant', l
     <ScrollArea className="flex-1 min-h-0">
       <div className="px-4 py-6 md:px-6">
         {messages.length === 0 && !loading ? (
-          <p className="text-center text-neutral-400 text-sm mt-8">No messages yet.</p>
+          <p className="text-center text-ink-muted text-sm mt-8">No messages yet.</p>
         ) : (
           messages.map((msg, i) => (
             <ChatBubble

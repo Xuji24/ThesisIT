@@ -4,7 +4,7 @@ import { type HTMLAttributes } from 'react';
 function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-2xl border border-neutral-100 bg-neutral-50/50', className)}
+      className={cn('rounded-lg border border-line-hairline bg-surface-card', className)}
       {...props}
     />
   );
@@ -19,7 +19,7 @@ function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn('text-base font-semibold text-neutral-900 tracking-tight', className)}
+      className={cn('text-base font-semibold text-ink-primary tracking-tight', className)}
       {...props}
     />
   );
@@ -27,7 +27,7 @@ function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) 
 
 function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn('text-sm text-neutral-500', className)} {...props} />
+    <p className={cn('text-sm text-ink-muted', className)} {...props} />
   );
 }
 

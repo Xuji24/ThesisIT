@@ -12,11 +12,22 @@ import {
 import { getWaitMs, resetIp, getClientIp } from '../../../../lib/server/rate-limit';
 import { getCached, setCached } from '../../../../lib/server/llm-cache';
 import { isProviderCooling, markProviderCooling } from '../../../../lib/server/provider-cooldown';
+import { logEvent, recordDefenseEvaluation } from '../../../../lib/server/logEvent';
 
 // Raised to 90 s to accommodate the silent server-side wait when rate-limited.
 export const maxDuration = 90;
 
 const MAX_WAIT_MS = 55_000; // never wait longer than this (keeps us inside maxDuration)
+
+/** Best-effort task -> event_type mapping for usage telemetry. Never affects
+ *  the SSE contract or response the client sees -- see logEvent.ts. */
+function taskEventType(task: string, messageCount: number) {
+  if (task === 'Mock Defense') return messageCount <= 1 ? 'session_start' : 'question_asked';
+  if (task === 'Mock Defense — Evaluation') return 'evaluation_run';
+  if (task === 'Chat with Thesis') return 'chat_message';
+  if (task === 'Strengths & Weaknesses' || task === 'Panelist Recommendations') return 'report_generated';
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
@@ -49,6 +60,7 @@ export async function POST(request: NextRequest) {
   if (waitMs > 0) {
     const clampedWait = Math.min(waitMs + 500, MAX_WAIT_MS);
     console.info(`[RateLimit] ${ip} over quota — pausing ${clampedWait}ms before processing.`);
+    await logEvent('rate_limited', { task, waitMs: clampedWait }, request);
     await new Promise<void>((resolve) => setTimeout(resolve, clampedWait));
     resetIp(ip); // clear the counter so the next check passes
   }
@@ -58,6 +70,11 @@ export async function POST(request: NextRequest) {
   const cached = bypassCache ? null : getCached(systemPrompt, messages);
   if (cached) {
     console.info(`[Cache] "${task}" — serving cached response (no upstream call).`);
+    const eventType = taskEventType(task, messages.length);
+    if (eventType) await logEvent(eventType, { task, cacheHit: true }, request);
+    if (task === 'Mock Defense — Evaluation') {
+      await recordDefenseEvaluation(systemPrompt, cached);
+    }
     // Re-emit as a normal SSE stream so the client code path is identical
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -129,6 +146,7 @@ export async function POST(request: NextRequest) {
         console.warn(`[Fallback] ${provider} returned HTTP ${upstream.status}.`);
         // C: mark provider cooling so future requests in this process skip it
         markProviderCooling(validProvider, upstream.status, lastErrorMsg);
+        await logEvent('provider_fallback', { provider: validProvider, status: upstream.status, task }, request);
         continue;
       }
 
@@ -144,6 +162,19 @@ export async function POST(request: NextRequest) {
       const reader  = upstream.body.getReader();
       const decoder = new TextDecoder();
 
+      // B + D: Cache the response and log usage telemetry once the stream
+      // closes. Runs after all content has already been flushed to the
+      // client, so this never adds latency to what the user sees.
+      const finalizeStream = async () => {
+        if (!fullResponse.trim()) return;
+        setCached(systemPrompt, messages, fullResponse);
+        const eventType = taskEventType(task, messages.length);
+        if (eventType) await logEvent(eventType, { task, provider: validProvider }, request);
+        if (task === 'Mock Defense — Evaluation') {
+          await recordDefenseEvaluation(systemPrompt, fullResponse);
+        }
+      };
+
       // B + C: Accumulate response text so we can cache it once the stream closes.
       const stream = new ReadableStream({
         async pull(controller) {
@@ -151,10 +182,7 @@ export async function POST(request: NextRequest) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
-              // B: Cache the full accumulated response for future identical prompts
-              if (fullResponse.trim()) {
-                setCached(systemPrompt, messages, fullResponse);
-              }
+              await finalizeStream();
               controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
               controller.close();
               return;
@@ -168,7 +196,7 @@ export async function POST(request: NextRequest) {
               if (!line.startsWith('data: ')) continue;
               const data = line.slice(6).trim();
               if (data === '[DONE]') {
-                if (fullResponse.trim()) setCached(systemPrompt, messages, fullResponse);
+                await finalizeStream();
                 controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
                 controller.close();
                 return;
@@ -207,15 +235,18 @@ export async function POST(request: NextRequest) {
         console.warn(`[Fallback] Timeout for ${provider} (8s) — skipping.`);
         // Short cooldown so we don't hammer a slow provider on the next request.
         markProviderCooling(validProvider, 503, lastErrorMsg);
+        await logEvent('provider_fallback', { provider: validProvider, reason: 'timeout', task }, request);
       } else {
         lastErrorMsg = (err as Error).message;
         console.warn(`[Fallback] Fetch to ${provider} threw: ${lastErrorMsg}`);
+        await logEvent('provider_fallback', { provider: validProvider, reason: 'fetch_error', task }, request);
       }
     }
   }
 
   // All providers failed — return a terminal SSE error event (no 4xx/5xx header
   // so the client stream-reader doesn't short-circuit before reading the message)
+  await logEvent('error', { task, message: lastErrorMsg }, request);
   return new Response(
     `data: ${JSON.stringify({ error: lastErrorMsg })}\n\ndata: [DONE]\n\n`,
     {

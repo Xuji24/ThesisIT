@@ -54,7 +54,7 @@ export default function MockDefenseVoiceView({
   return (
     <div
       ref={areaRef}
-      className="flex-1 min-h-0 overflow-y-auto scrollbar-brand bg-white"
+      className="flex-1 min-h-0 overflow-y-auto scrollbar-brand bg-surface-card"
     >
       <div className="flex flex-col items-center gap-3 px-4 py-4 w-full max-w-lg mx-auto">
         <div
@@ -82,26 +82,26 @@ export default function MockDefenseVoiceView({
         {loading ? (
           <div className="shrink-0 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
             </span>
-            <p className="text-[11px] uppercase tracking-widest text-emerald-600 font-medium">Processing…</p>
+            <p className="text-[11px] uppercase tracking-widest text-accent-hover font-medium">Processing…</p>
           </div>
         ) : !aiIsSpeaking && !speech.isListening && !hasRecording ? (
-          <p className="shrink-0 text-[11px] uppercase tracking-widest text-emerald-600/80 font-medium text-center">
+          <p className="shrink-0 text-[11px] uppercase tracking-widest text-accent-hover/80 font-medium text-center">
             Tap orb or Start below to speak
           </p>
         ) : null}
 
-        <div className="shrink-0 w-full min-h-[88px] max-h-[112px] overflow-y-auto scrollbar-brand rounded-xl border border-emerald-100/80 bg-emerald-50/40 px-4 py-3 flex items-start justify-center">
+        <div className="shrink-0 w-full min-h-[88px] max-h-[112px] overflow-y-auto scrollbar-brand rounded-md border border-accent/15 bg-accent-soft/60 px-4 py-3 flex items-start justify-center">
           {loading ? (
-            <p className="text-sm text-neutral-400 text-center thinking-dots self-center w-full">
+            <p className="text-sm text-ink-muted text-center thinking-dots self-center w-full">
               <span>.</span>
               <span>.</span>
               <span>.</span>
             </p>
           ) : synth.spokenText ? (
-            <p key={synth.spokenText} className="text-justify text-sm text-neutral-700 leading-relaxed w-full">
+            <p key={synth.spokenText} className="text-justify text-sm text-ink-secondary leading-relaxed w-full">
               {synth.spokenText.trim().split(/\s+/).map((word, i) => (
                 <span key={i} className="lyric-word mr-[0.3em]" style={{ animationDelay: `${i * 0.05}s` }}>
                   {word}
@@ -109,7 +109,7 @@ export default function MockDefenseVoiceView({
               ))}
             </p>
           ) : speech.transcript ? (
-            <p className="text-justify text-sm text-emerald-700 leading-relaxed w-full">
+            <p className="text-justify text-sm text-accent-hover leading-relaxed w-full">
               {speech.transcript.trim().split(/\s+/).map((word, i) => (
                 <span key={i} className="lyric-word mr-[0.3em]" style={{ animationDelay: `${i * 0.04}s` }}>
                   {word}
@@ -117,11 +117,11 @@ export default function MockDefenseVoiceView({
               ))}
             </p>
           ) : speech.isListening ? (
-            <p className="text-[11px] uppercase tracking-widest text-emerald-600 font-medium animate-pulse self-center w-full text-center">
+            <p className="text-[11px] uppercase tracking-widest text-accent-hover font-medium animate-pulse self-center w-full text-center">
               Listening…
             </p>
           ) : (
-            <p className="text-[11px] text-neutral-300 self-center w-full text-center select-none">
+            <p className="text-[11px] text-ink-muted/60 self-center w-full text-center select-none">
               Transcript will appear here
             </p>
           )}

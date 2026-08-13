@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Card, CardContent } from '@/components/ui/card';
-import { useLocalStorage, STORAGE_KEYS } from '@/hooks/useLocalStorage';
+import { useSessionStorage, STORAGE_KEYS } from '@/hooks/useSessionStorage';
 import ReportRenderer from './shared/ReportRenderer';
 
 const CHAPTERS = [
@@ -27,9 +27,9 @@ interface PanelRecosProps {
 }
 
 export default function PanelRecos({ thesisText }: PanelRecosProps) {
-  const [comments, setComments] = useLocalStorage(STORAGE_KEYS.PANEL_COMMENTS, '');
-  const [chapter, setChapter] = useLocalStorage(STORAGE_KEYS.PANEL_CHAPTER, CHAPTERS[0]);
-  const [output, setOutput] = useLocalStorage(STORAGE_KEYS.PANEL_OUTPUT, '');
+  const [comments, setComments] = useSessionStorage(STORAGE_KEYS.PANEL_COMMENTS, '');
+  const [chapter, setChapter] = useSessionStorage(STORAGE_KEYS.PANEL_CHAPTER, CHAPTERS[0]);
+  const [output, setOutput] = useSessionStorage(STORAGE_KEYS.PANEL_OUTPUT, '');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -84,7 +84,7 @@ export default function PanelRecos({ thesisText }: PanelRecosProps) {
       <div className="space-y-8">
         {/* ── Comments input ───────────────────────────────────────────── */}
         <div>
-          <label className="block text-sm font-semibold text-neutral-800 mb-2">
+          <label className="block text-sm font-semibold text-ink-secondary mb-2">
             Paste your panelist&apos;s comments or suggestions
           </label>
           <Textarea
@@ -98,7 +98,7 @@ export default function PanelRecos({ thesisText }: PanelRecosProps) {
 
         {/* ── Chapter selector ─────────────────────────────────────────── */}
         <div>
-          <label className="block text-sm font-semibold text-neutral-800 mb-2">
+          <label className="block text-sm font-semibold text-ink-secondary mb-2">
             Which part of the thesis does this affect?
           </label>
           <CustomSelect
@@ -115,11 +115,11 @@ export default function PanelRecos({ thesisText }: PanelRecosProps) {
           onClick={revise}
           disabled={loading || !comments.trim()}
           variant="default"
-          className="w-full group justify-center pl-6 pr-2 py-3 rounded-xl h-auto"
+          className="w-full group justify-center pl-6 pr-2 py-3 h-auto"
         >
           {loading ? 'Revising section...' : 'Revise This Section'}
           {!loading && (
-            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-neutral-900 ml-3">
+            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-accent ml-3">
               <Wand2 className="w-4 h-4" strokeWidth={2.5} />
             </span>
           )}
@@ -129,7 +129,7 @@ export default function PanelRecos({ thesisText }: PanelRecosProps) {
       {loading && (
         <div className="mt-10">
           <div className="skeleton h-3.5 w-28 rounded mb-4" />
-          <div className="rounded-2xl border border-neutral-100 p-6 space-y-3">
+          <div className="rounded-lg border border-line-hairline p-6 space-y-3">
             {['100%', '90%', '100%', '82%', '100%', '76%', '100%', '66%'].map((w, i) => (
               <div key={i} className="skeleton h-3.5 rounded" style={{ width: w }} />
             ))}
@@ -140,7 +140,7 @@ export default function PanelRecos({ thesisText }: PanelRecosProps) {
       {output && (
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-900">Revised Section</h3>
+            <h3 className="text-sm font-semibold text-ink-primary">Revised Section</h3>
             <Button
               type="button"
               onClick={copyOutput}

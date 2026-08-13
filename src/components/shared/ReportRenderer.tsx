@@ -63,7 +63,7 @@ export default function ReportRenderer({ text, className = '' }: ReportRendererP
           return (
             <p
               key={i}
-              className="font-bold text-neutral-900 mt-7 first:mt-0 mb-2 tracking-wide text-[0.8rem] uppercase"
+              className="font-bold text-ink-primary mt-7 first:mt-0 mb-2 tracking-wide text-[0.8rem] uppercase"
             >
               {trimmed}
             </p>
@@ -76,8 +76,8 @@ export default function ReportRenderer({ text, className = '' }: ReportRendererP
           const label = trimmed.slice(0, colonIdx + 1);
           const rest = trimmed.slice(colonIdx + 1);
           return (
-            <p key={i} className="pl-4 text-neutral-800 mt-2 mb-0.5">
-              <span className="font-semibold text-neutral-900">{label}</span>
+            <p key={i} className="pl-4 text-ink-secondary mt-2 mb-0.5">
+              <span className="font-semibold text-ink-primary">{label}</span>
               {rest}
             </p>
           );
@@ -85,7 +85,7 @@ export default function ReportRenderer({ text, className = '' }: ReportRendererP
 
         // Normal body line — indented
         return (
-          <p key={i} className="pl-4 text-neutral-700 mb-0.5">
+          <p key={i} className="pl-4 text-ink-secondary mb-0.5">
             {trimmed}
           </p>
         );

@@ -50,21 +50,21 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
   } = props;
 
   return (
-    <div className="shrink-0 px-6 lg:px-8 py-3 border-b border-neutral-100 flex items-center gap-3 flex-wrap">
-      <span className="text-xs text-neutral-500">
-        Difficulty: <span className="font-semibold text-neutral-900">{difficulty}</span>
+    <div className="shrink-0 px-6 lg:px-8 py-3 border-b border-line-hairline flex items-center gap-3 flex-wrap">
+      <span className="text-xs text-ink-muted">
+        Difficulty: <span className="font-semibold text-ink-primary">{difficulty}</span>
       </span>
 
       {questionLimit > 0 && (
-        <span className="text-xs text-neutral-500">
+        <span className="text-xs text-ink-muted">
           Q:{' '}
-          <span className={`font-semibold ${isSessionComplete ? 'text-amber-600' : 'text-neutral-900'}`}>
+          <span className={`font-semibold ${isSessionComplete ? 'text-[#8a5a00]' : 'text-ink-primary'}`}>
             {panelQCount}/{questionLimit}
           </span>
         </span>
       )}
 
-      <span className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-500 select-none">
+      <span className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-sunken text-ink-secondary select-none">
         {mode === 'voice' ? (
           <>
             <Mic className="w-3 h-3" strokeWidth={2} /> Voice
@@ -77,7 +77,7 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
       </span>
 
       {mode === 'voice' && synth.provider && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 select-none">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-soft text-accent-hover border border-accent/20 select-none">
           {synth.provider === 'elevenlabs' && 'ElevenLabs'}
           {synth.provider === 'google' && 'Google TTS'}
           {synth.provider === 'browser' && 'Browser TTS'}
@@ -91,7 +91,7 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
               type="button"
               title="Replay last question"
               onClick={replayLastQuestion}
-              className="px-2.5 py-1 rounded-full text-xs font-medium border bg-neutral-100 text-neutral-500 border-transparent hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200 transition-all duration-150"
+              className="px-2.5 py-1 rounded-full text-xs font-medium border bg-surface-sunken text-ink-muted border-transparent hover:text-accent-hover hover:bg-accent-soft hover:border-accent/20 transition-colors duration-150"
               aria-label="Replay last panel question"
             >
               <span className="flex items-center gap-1">
@@ -103,10 +103,10 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
           <button
             type="button"
             onClick={() => setShowTranscript((v) => !v)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors duration-150 ${
               showTranscript
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-neutral-100 text-neutral-500 border-transparent hover:text-emerald-700 hover:bg-emerald-50'
+                ? 'bg-accent-soft text-accent-hover border-accent/20'
+                : 'bg-surface-sunken text-ink-muted border-transparent hover:text-accent-hover hover:bg-accent-soft'
             }`}
           >
             ≡ Transcript
@@ -115,14 +115,14 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
       )}
 
       {evalReport && (
-        <div className="flex items-center gap-1 bg-neutral-100 rounded-full p-0.5">
+        <div className="flex items-center gap-1 bg-surface-sunken rounded-full p-0.5">
           {(['transcript', 'evaluation'] as const).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${
-                view === v ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors duration-150 ${
+                view === v ? 'bg-surface-card text-ink-primary shadow-sm' : 'text-ink-muted hover:text-ink-secondary'
               }`}
             >
               {v === 'evaluation' ? (
@@ -148,7 +148,7 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
           size="sm"
           onClick={evaluateSession}
           disabled={isEvaluating || loading}
-          className="text-xs rounded-full ml-auto"
+          className="text-xs ml-auto"
         >
           {isEvaluating ? (
             <span className="flex items-center gap-1.5">
@@ -166,7 +166,7 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
         variant="ghost"
         size="sm"
         onClick={resetSession}
-        className={`${messages.length > 2 ? '' : 'ml-auto'} text-xs text-neutral-400 hover:text-neutral-700 px-0 underline underline-offset-2`}
+        className={`${messages.length > 2 ? '' : 'ml-auto'} text-xs text-ink-muted hover:text-ink-primary px-0 underline underline-offset-2`}
       >
         New Session
       </Button>
@@ -175,7 +175,7 @@ export default function MockDefenseSessionHeader(props: HeaderProps) {
         <button
           type="button"
           onClick={saveSession}
-          className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800 transition-colors ml-2"
+          className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink-primary transition-colors ml-2"
           title="Save transcript"
         >
           <Download className="w-3.5 h-3.5" />

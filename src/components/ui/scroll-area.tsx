@@ -21,7 +21,7 @@ function ScrollArea({ className, children, ...props }: ScrollAreaProps) {
         className="flex select-none touch-none p-0.5 transition-colors duration-150 ease-out data-[orientation=vertical]:w-2"
         orientation="vertical"
       >
-        <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-neutral-200 hover:bg-neutral-300 transition-colors" />
+        <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-line-strong hover:bg-ink-muted transition-colors" />
       </ScrollAreaPrimitive.Scrollbar>
     </ScrollAreaPrimitive.Root>
   );

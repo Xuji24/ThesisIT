@@ -5,22 +5,23 @@ import { callLLMStream } from '../lib/llm';
 import { extractSections } from '../lib/extractSections';
 import { chunkText, retrieveTopChunks } from '../lib/chunkRetrieval';
 import { STRENGTHS_WEAKNESSES_PROMPT, injectPrompt, sanitizeForPrompt } from '../lib/prompts';
+import { stripJsonBlock } from '../lib/parseReport';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { useLocalStorage, STORAGE_KEYS } from '@/hooks/useLocalStorage';
+import { useSessionStorage, STORAGE_KEYS } from '@/hooks/useSessionStorage';
 import ReportRenderer from './shared/ReportRenderer';
+import ManuscriptAnalyticsDashboard from './analytics/ManuscriptAnalyticsDashboard';
+import ReportViewToggle, { type ReportView } from './analytics/ReportViewToggle';
 
 interface StrengthsWeaknessesProps {
   thesisText: string;
 }
 
 export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesProps) {
-  const [report, setReport] = useLocalStorage(STORAGE_KEYS.SW_REPORT, '');
+  const [report, setReport] = useSessionStorage(STORAGE_KEYS.SW_REPORT, '');
   const [loading, setLoading] = useState(false);
-  // Track whether the report already exists so re-runs can bypass the cache
-  // and force a fresh upstream call (instead of silently returning the cached text).
-  const isRerun = report.length > 0;
+  const [view, setView] = useState<ReportView>('analytics');
 
   const analyze = async (forceRefresh = false) => {
     setLoading(true);
@@ -82,11 +83,11 @@ export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesP
     <div className="flex-1 overflow-y-auto p-6 lg:px-8 md:py-10 w-full">
       {!report && !loading && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">Manuscript Evaluation</h2>
-          <p className="text-sm text-neutral-500 mb-6 max-w-sm leading-relaxed">
+          <h2 className="text-2xl font-semibold text-ink-primary mb-2">Manuscript Evaluation</h2>
+          <p className="text-sm text-ink-muted mb-6 max-w-sm leading-relaxed">
             One-click AI analysis of your full thesis. The report covers:
           </p>
-          <ul className="text-sm text-neutral-500 space-y-2 mb-8 text-left">
+          <ul className="text-sm text-ink-muted space-y-2 mb-8 text-left">
             {[
               'Strengths',
               'Weaknesses & Loopholes',
@@ -94,8 +95,8 @@ export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesP
               'Predicted Panel Questions',
               'Recommendations Before Defense',
             ].map((item) => (
-              <li key={item} className="flex items-center gap-2.5 hover:translate-x-1 hover:text-emerald-600 transition-all duration-200 cursor-default">
-                <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0" />
+              <li key={item} className="flex items-center gap-2.5 hover:translate-x-1 hover:text-accent transition-all duration-200 cursor-default">
+                <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
                 {item}
               </li>
             ))}
@@ -104,7 +105,7 @@ export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesP
             type="button"
             onClick={() => analyze(false)}
             variant="default"
-            className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all duration-300 text-white"
+            size="lg"
           >
             Analyze My Thesis
           </Button>
@@ -115,7 +116,7 @@ export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesP
         <div className="max-w-3xl py-8 w-full">
           <div className="flex items-center gap-3 mb-8">
             <Spinner size="sm" />
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-ink-muted">
               Evaluating your manuscript
             </p>
           </div>
@@ -141,19 +142,28 @@ export default function StrengthsWeaknesses({ thesisText }: StrengthsWeaknessesP
       )}
 
       {report && !loading && (
-        <Card className="max-w-3xl w-full hover:shadow-xl hover:shadow-emerald-100/50 hover:border-emerald-100 transition-all duration-500">
-          <CardContent className="pt-6">
-            <ReportRenderer text={report} />
-            <Button
-              type="button"
-              onClick={() => analyze(true)}
-              variant="outline"
-              className="mt-6 cursor-pointer text-emerald-600 border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200"
-            >
-              Re-run analysis
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="max-w-4xl w-full">
+          <ReportViewToggle view={view} onChange={setView} />
+
+          {view === 'analytics' ? (
+            <ManuscriptAnalyticsDashboard report={report} />
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <ReportRenderer text={stripJsonBlock(report)} />
+              </CardContent>
+            </Card>
+          )}
+
+          <Button
+            type="button"
+            onClick={() => analyze(true)}
+            variant="outline"
+            className="mt-6"
+          >
+            Re-run analysis
+          </Button>
+        </div>
       )}
     </div>
   );

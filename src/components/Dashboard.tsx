@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, Component, type ReactNode, useState } from 'react';
+import { Suspense, Component, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { FileText, Upload } from 'lucide-react';
 import { TabIcon } from '@/components/icons';
@@ -28,11 +28,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.error) {
       return (
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
-          <p className="text-sm text-neutral-500 mb-4">Something went wrong in this tab.</p>
+          <p className="text-sm text-ink-muted mb-4">Something went wrong in this tab.</p>
           <button
             type="button"
             onClick={() => this.setState({ error: null })}
-            className="text-sm font-medium text-neutral-900 underline underline-offset-4"
+            className="text-sm font-medium text-ink-primary underline underline-offset-4"
           >
             Try again
           </button>
@@ -91,29 +91,21 @@ export default function Dashboard({
   onReset,
 }: DashboardProps) {
   return (
-    <div className="min-h-full bg-slate-50 text-slate-900 font-sans antialiased flex flex-col relative overflow-hidden">
-      <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-teal-200/30 blur-3xl pointer-events-none" />
-
-      <header className="sticky top-0 z-20 glass border-b border-slate-200/60 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4 min-w-0">
-            <h1 className="text-lg font-heading font-bold text-emerald-900 tracking-tight shrink-0">ThesisIT</h1>
-            <span className="text-slate-300 hidden sm:block">|</span>
-            <p
-              className="text-sm font-medium text-slate-500 truncate max-w-xs hidden sm:flex items-center gap-2 bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50"
-              title={fileName}
-            >
-              <FileText className="w-4 h-4 shrink-0 text-emerald-500" strokeWidth={2} />
-              <span className="truncate">{fileName}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Button type="button" variant="outline" size="sm" onClick={onReset} className="border-slate-200 hover:bg-slate-100/50 transition-colors cursor:pointer">
-              <Upload className="w-4 h-4 mr-1.5 text-slate-600" strokeWidth={2} />
-              <span className="hidden sm:inline font-medium">New PDF</span>
-            </Button>
-          </div>
+    <div className="min-h-full bg-surface-page text-ink-primary font-sans antialiased flex flex-col">
+      {/* Sub-header: file context + reset. Global branding/nav lives in AppShell. */}
+      <div className="sticky top-14 z-10 border-b border-line-hairline bg-surface-card">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <p
+            className="text-sm font-medium text-ink-secondary truncate max-w-xs flex items-center gap-2 bg-surface-sunken px-3 py-1.5 rounded-full border border-line-hairline"
+            title={fileName}
+          >
+            <FileText className="w-4 h-4 shrink-0 text-accent" strokeWidth={2} />
+            <span className="truncate">{fileName}</span>
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={onReset}>
+            <Upload className="w-4 h-4 mr-1.5" strokeWidth={2} />
+            <span className="hidden sm:inline font-medium">New PDF</span>
+          </Button>
         </div>
 
         <Tabs
@@ -121,12 +113,12 @@ export default function Dashboard({
           onValueChange={onTabChange}
           className="max-w-7xl mx-auto px-6 lg:px-8"
         >
-          <TabsList className="bg-slate-100/50 p-1 rounded-xl border border-slate-200/50 mb-3">
+          <TabsList className="bg-surface-sunken p-1 rounded-md border border-line-hairline mb-3">
             {TABS.map((tab) => (
-              <TabsTrigger 
-                key={tab.id} 
+              <TabsTrigger
+                key={tab.id}
                 value={tab.id}
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm hover:bg-white/60 hover:text-emerald-600 transition-all duration-200 cursor-pointer"
+                className="rounded-[calc(var(--radius-md)-2px)] data-[state=active]:bg-surface-card data-[state=active]:text-accent data-[state=active]:shadow-sm hover:text-ink-primary transition-colors cursor-pointer"
               >
                 <TabIcon id={tab.id} className="w-4 h-4 mr-2 opacity-80" />
                 <span className="font-medium">{tab.label}</span>
@@ -134,10 +126,10 @@ export default function Dashboard({
             ))}
           </TabsList>
         </Tabs>
-      </header>
+      </div>
 
-      <main className="flex-1 flex flex-col min-h-0 z-10 max-w-7xl mx-auto w-full p-6 lg:p-8 group">
-        <div className="flex-1 flex flex-col glass-card bg-white/60 overflow-hidden shadow-xl shadow-slate-200/40 border-slate-200/60 rounded-3xl tab-enter hover:shadow-2xl hover:shadow-emerald-200/40 hover:border-emerald-100 transition-all duration-500">
+      <main className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full p-6 lg:p-8">
+        <div className="flex-1 flex flex-col bg-surface-card border border-line-hairline overflow-hidden rounded-lg tab-enter">
           <ErrorBoundary key={activeTab}>
             <Suspense fallback={<TabFallback />}>
               {activeTab === 'mock' && (

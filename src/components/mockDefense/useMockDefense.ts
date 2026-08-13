@@ -6,20 +6,21 @@ import { extractSections } from '@/lib/extractSections';
 import { MOCK_DEFENSE_PROMPT, MOCK_DEFENSE_EVALUATION_PROMPT, injectPrompt, sanitizeForPrompt } from '@/lib/prompts';
 import { useSpeechRecognition, useAudioRecorder } from '@/hooks/useSpeech';
 import { useTTS } from '@/hooks/useTTS';
-import { useLocalStorage, STORAGE_KEYS } from '@/hooks/useLocalStorage';
+import { useSessionStorage, STORAGE_KEYS } from '@/hooks/useSessionStorage';
+import { buildVagueAnswerPushback, isSubstantiveDefenseAnswer } from './answerGate';
 import { buildEvaluationTranscript, buildThesisContext, downloadSessionTranscript } from './utils';
 import type { ChatMessage, SessionMode, SessionView } from './types';
 
 export function useMockDefense(thesisText: string) {
-  const [difficulty, setDifficulty] = useLocalStorage(STORAGE_KEYS.MOCK_DIFFICULTY, 'Standard');
-  const [messages, setMessages] = useLocalStorage<ChatMessage[]>(STORAGE_KEYS.MOCK_MESSAGES, []);
+  const [difficulty, setDifficulty] = useSessionStorage(STORAGE_KEYS.MOCK_DIFFICULTY, 'Standard');
+  const [messages, setMessages] = useSessionStorage<ChatMessage[]>(STORAGE_KEYS.MOCK_MESSAGES, []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [started, setStarted] = useLocalStorage(STORAGE_KEYS.MOCK_STARTED, false);
-  const [mode, setMode] = useLocalStorage<SessionMode>(STORAGE_KEYS.MOCK_MODE, 'chat');
+  const [started, setStarted] = useSessionStorage(STORAGE_KEYS.MOCK_STARTED, false);
+  const [mode, setMode] = useSessionStorage<SessionMode>(STORAGE_KEYS.MOCK_MODE, 'chat');
   const [isPlayingBack, setIsPlayingBack] = useState(false);
-  const [questionLimit, setQuestionLimit] = useLocalStorage(STORAGE_KEYS.MOCK_QUESTION_LIMIT, 10);
-  const [evalReport, setEvalReport] = useLocalStorage(STORAGE_KEYS.MOCK_EVAL_REPORT, '');
+  const [questionLimit, setQuestionLimit] = useSessionStorage(STORAGE_KEYS.MOCK_QUESTION_LIMIT, 10);
+  const [evalReport, setEvalReport] = useSessionStorage(STORAGE_KEYS.MOCK_EVAL_REPORT, '');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [view, setView] = useState<SessionView>('transcript');
   const [showTranscript, setShowTranscript] = useState(false);
@@ -66,7 +67,7 @@ export function useMockDefense(thesisText: string) {
     [difficulty, thesisContext],
   );
 
-  const panelQCount = messages.filter((m) => m.role === 'assistant').length;
+  const panelQCount = messages.filter((m) => m.role === 'assistant' && !m.localOnly).length;
   const isSessionComplete = questionLimit > 0 && panelQCount >= questionLimit && !loading;
   const hasRecording = !speech.isListening && !!(speech.transcriptRef.current || recorder.audioURL);
   const aiIsSpeaking = mode === 'voice' && synth.isSpeaking;
@@ -79,6 +80,19 @@ export function useMockDefense(thesisText: string) {
     audioRef.current?.pause();
     setIsPlayingBack(false);
   }, [speech, recorder]);
+
+  const respondWithLocalPanel = useCallback(
+    (panelReply: string, nextMessages: ChatMessage[]) => {
+      synth.cancel();
+      abortRef.current?.abort();
+      setLoading(false);
+      setMessages([...nextMessages, { role: 'assistant', content: panelReply, localOnly: true }]);
+      if (modeRef.current === 'voice' && panelReply) {
+        synth.speak(panelReply);
+      }
+    },
+    [setMessages, synth],
+  );
 
   const sendToClaude = useCallback(
     async (nextMessages: ChatMessage[]) => {
@@ -124,6 +138,24 @@ export function useMockDefense(thesisText: string) {
     [systemPrompt, setMessages, synth],
   );
 
+  const submitStudentAnswer = useCallback(
+    async (text: string) => {
+      const next = [...messages.slice(-20), { role: 'user', content: text }];
+      setMessages(next);
+
+      const lastPanel = [...messages]
+        .reverse()
+        .find((m) => m.role === 'assistant' && !m.localOnly);
+      if (!isSubstantiveDefenseAnswer(text) && lastPanel) {
+        respondWithLocalPanel(buildVagueAnswerPushback(lastPanel.content), next);
+        return;
+      }
+
+      await sendToClaude(next);
+    },
+    [messages, setMessages, respondWithLocalPanel, sendToClaude],
+  );
+
   const startSession = useCallback(async () => {
     setStarted(true);
     const first: ChatMessage[] = [{ role: 'user', content: 'Begin the oral defense.' }];
@@ -147,10 +179,8 @@ export function useMockDefense(thesisText: string) {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-    const next = [...messages.slice(-20), { role: 'user', content: text }];
-    setMessages(next);
-    await sendToClaude(next);
-  }, [input, loading, messages, setMessages, sendToClaude]);
+    await submitStudentAnswer(text);
+  }, [input, loading, submitStudentAnswer]);
 
   const toggleMic = useCallback(async () => {
     if (synth.isSpeaking) synth.cancel();
@@ -241,13 +271,11 @@ export function useMockDefense(thesisText: string) {
     speech.clearTranscript();
     audioRef.current?.pause();
     setIsPlayingBack(false);
-    const next = [...messages.slice(-20), { role: 'user', content: text }];
-    setMessages(next);
-    await sendToClaude(next);
-  }, [speech, loading, synth, recorder, messages, setMessages, sendToClaude]);
+    await submitStudentAnswer(text);
+  }, [speech, loading, synth, recorder, submitStudentAnswer]);
 
   const replayLastQuestion = useCallback(() => {
-    const lastAI = [...messages].reverse().find((m) => m.role === 'assistant');
+    const lastAI = [...messages].reverse().find((m) => m.role === 'assistant' && !m.localOnly);
     if (lastAI) {
       synth.cancel();
       synth.speak(lastAI.content);

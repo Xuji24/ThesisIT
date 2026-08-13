@@ -15,12 +15,12 @@ export default function MockDefenseSessionBanner({
   onEvaluate,
 }: MockDefenseSessionBannerProps) {
   return (
-    <div className="shrink-0 border-t border-amber-100 bg-amber-50 px-5 py-3 flex items-center justify-between gap-3">
+    <div className="shrink-0 border-t border-status-warning/30 bg-status-warning/10 px-5 py-3 flex items-center justify-between gap-3">
       <div>
-        <p className="text-sm font-semibold text-amber-800">
+        <p className="text-sm font-semibold text-[#8a5a00]">
           Session complete — {panelQCount} panel questions answered
         </p>
-        <p className="text-xs text-amber-600 mt-0.5">
+        <p className="text-xs text-[#8a5a00]/80 mt-0.5">
           Get your graded evaluation with per-answer scores and recommendations.
         </p>
       </div>

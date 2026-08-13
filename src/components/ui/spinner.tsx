@@ -1,23 +1,21 @@
 'use client';
 
-/**
- * Spinner — wraps HeroUI's Spinner with design-system classNames overrides.
- * HeroUI's Tailwind plugin is not required because all visual styles are
- * applied via the classNames prop using our existing Tailwind v4 setup.
- */
-import { Spinner as HeroSpinner } from '@heroui/react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/**
- * @param {{ className?: string, size?: 'sm' | 'md' | 'lg', label?: string }} props
- */
 interface SpinnerProps { className?: string; size?: 'sm' | 'md' | 'lg'; }
+
+const SIZE_CLASSES: Record<NonNullable<SpinnerProps['size']>, string> = {
+  sm: 'w-4 h-4',
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+};
 
 function Spinner({ className, size = 'sm' }: SpinnerProps) {
   return (
-    <HeroSpinner
-      size={size}
-      className={cn('text-neutral-900', className)}
+    <Loader2
+      className={cn('animate-spin text-ink-primary', SIZE_CLASSES[size], className)}
+      aria-hidden
     />
   );
 }

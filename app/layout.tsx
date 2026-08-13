@@ -1,4 +1,5 @@
 import { Inter, Outfit } from 'next/font/google';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import './globals.css';
 
 const inter = Inter({
@@ -27,8 +28,8 @@ import type { ReactNode } from 'react';
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="font-sans antialiased bg-slate-50 text-slate-900 h-full flex flex-col selection:bg-emerald-100 selection:text-emerald-900">
-        {children}
+      <body className="font-sans antialiased bg-surface-page text-ink-primary h-full flex flex-col selection:bg-accent-soft selection:text-accent-hover">
+        <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
       </body>
     </html>
   );
