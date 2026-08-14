@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type Mode = 'signin' | 'signup';
+type Step = 'email' | 'otp';
 
 export default function LoginPage() {
   return (
@@ -23,52 +23,71 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/';
 
-  const [mode, setMode] = useState<Mode>('signin');
+  const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: FormEvent) => {
+  const sendCode = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
 
     const supabase = createClient();
-
-    if (mode === 'signin') {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setError(signInError.message);
-        setLoading(false);
-        return;
-      }
-      router.push(next);
-      router.refresh();
-      return;
-    }
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
-      password,
-      options: { data: { full_name: fullName || null } },
+      options: { shouldCreateUser: true },
     });
-    if (signUpError) {
-      setError(signUpError.message);
+    if (otpError) {
+      setError(otpError.message);
       setLoading(false);
       return;
     }
-    // If email confirmation is enabled (Supabase default), there's no
-    // session yet — session exists only means confirmation is off.
-    if (data.session) {
-      router.push(next);
-      router.refresh();
+    setMessage('Code sent. Check your email.');
+    setStep('otp');
+    setLoading(false);
+  };
+
+  const verifyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+    if (verifyError) {
+      setError(verifyError.message);
+      setLoading(false);
       return;
     }
-    setMessage('Account created. Check your email to confirm before signing in.');
+    router.push(next);
+    router.refresh();
+  };
+
+  const resendCode = async () => {
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    const supabase = createClient();
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (otpError) {
+      setError(otpError.message);
+      setLoading(false);
+      return;
+    }
+    setMessage('New code sent. Check your email.');
     setLoading(false);
   };
 
@@ -80,91 +99,101 @@ function LoginForm() {
             ThesisIT
           </Link>
           <p className="mt-2 text-sm text-ink-muted">
-            {mode === 'signin' ? 'Sign in to continue' : 'Create your account'}
+            {step === 'email'
+              ? 'Sign in or create an account with your email'
+              : `Enter the code sent to ${email}`}
           </p>
         </div>
 
         <div className="rounded-lg border border-line-hairline bg-surface-card p-6">
-          <div className="flex items-center gap-1 bg-surface-sunken rounded-md p-0.5 mb-6">
-            {(['signin', 'signup'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => { setMode(m); setError(''); setMessage(''); }}
-                className={`flex-1 py-1.5 rounded-[calc(var(--radius-md)-2px)] text-xs font-medium transition-colors ${
-                  mode === m
-                    ? 'bg-surface-card text-ink-primary shadow-sm'
-                    : 'text-ink-muted hover:text-ink-secondary'
-                }`}
-              >
-                {m === 'signin' ? 'Sign in' : 'Sign up'}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
+          {step === 'email' && (
+            <form onSubmit={sendCode} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-ink-secondary mb-1.5" htmlFor="fullName">
-                  Full name
+                <label className="block text-xs font-medium text-ink-secondary mb-1.5" htmlFor="email">
+                  Email
                 </label>
                 <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Juan Dela Cruz"
-                  autoComplete="name"
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@school.edu"
+                  autoComplete="email"
+                  autoFocus
                 />
               </div>
-            )}
 
-            <div>
-              <label className="block text-xs font-medium text-ink-secondary mb-1.5" htmlFor="email">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@school.edu"
-                autoComplete="email"
-              />
-            </div>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-            <div>
-              <label className="block text-xs font-medium text-ink-secondary mb-1.5" htmlFor="password">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              />
-            </div>
+              <Button type="submit" variant="default" disabled={loading} className="w-full">
+                {loading ? 'Sending…' : 'Send code'}
+              </Button>
+            </form>
+          )}
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {message && (
-              <Alert variant="success">
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-            )}
+          {step === 'otp' && (
+            <form onSubmit={verifyCode} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-ink-secondary mb-1.5" htmlFor="otp">
+                  Verification code
+                </label>
+                <Input
+                  id="otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                  autoFocus
+                />
+              </div>
 
-            <Button type="submit" variant="default" disabled={loading} className="w-full">
-              {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-            </Button>
-          </form>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {message && (
+                <Alert variant="success">
+                  <AlertDescription>{message}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" variant="default" disabled={loading} className="w-full">
+                {loading ? 'Verifying…' : 'Verify & continue'}
+              </Button>
+
+              <div className="flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('email');
+                    setCode('');
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-ink-muted hover:text-accent transition-colors"
+                >
+                  ← Use a different email
+                </button>
+                <button
+                  type="button"
+                  onClick={resendCode}
+                  disabled={loading}
+                  className="text-ink-muted hover:text-accent transition-colors"
+                >
+                  Resend code
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <p className="mt-6 text-center text-xs text-ink-muted">
