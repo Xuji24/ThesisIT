@@ -20,7 +20,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json() as { systemPrompt?: string; maxTokens?: unknown; messages?: unknown[] };
+  let body: { systemPrompt?: string; maxTokens?: unknown; messages?: unknown[] };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid or empty request body.' }, { status: 400 });
+  }
+
   const systemPrompt = safeSystemPrompt(body?.systemPrompt);
   const maxTokens    = safeMaxTokens(body?.maxTokens);
   const messages     = safeMessages(body?.messages);
